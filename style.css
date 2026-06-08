@@ -940,3 +940,130 @@ html, body {
   margin-right: 6px;
   flex-shrink: 0;
 }
+
+/* ===== PIN Screen ===== */
+#pinScreen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100dvh;
+  padding: 32px 24px;
+  background: linear-gradient(160deg, #fff5f5, #ffffff);
+}
+
+.pin-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 36px 28px;
+  max-width: 360px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+}
+
+.pin-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.2rem;
+  font-weight: 900;
+}
+
+.pin-avatar.quentin { background: #ffe5e5; color: var(--red); }
+.pin-avatar.sophie  { background: #e5eeff; color: var(--blue); }
+
+.pin-title {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--txt);
+}
+
+.pin-subtitle {
+  font-size: 0.88rem;
+  color: var(--txt2);
+  text-align: center;
+}
+
+.pin-input {
+  width: 100%;
+  padding: 14px 16px;
+  font-size: 1.6rem;
+  letter-spacing: 0.4em;
+  text-align: center;
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  outline: none;
+  background: var(--bg);
+  color: var(--txt);
+  transition: border-color 0.2s;
+}
+
+.pin-input:focus { border-color: var(--red); }
+
+.pin-error {
+  color: var(--red);
+  font-weight: 700;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.pin-loading {
+  color: var(--txt2);
+  font-size: 0.88rem;
+  text-align: center;
+  font-style: italic;
+}
+
+.pin-buttons {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+}
+
+.pin-buttons .btn { flex: 1; }
+
+.btn-secondary {
+  background: var(--bg);
+  color: var(--txt);
+  border: 2px solid var(--border);
+}
+
+.pin-offline-note {
+  font-size: 0.8rem;
+  color: var(--txt2);
+  text-align: center;
+  font-style: italic;
+}
+
+/* ===== Sync indicator (topbar) ===== */
+.sync-indicator {
+  font-size: 0.78rem;
+  font-weight: 700;
+  margin-left: auto;
+  margin-right: 8px;
+  opacity: 0;
+  transition: opacity 0.3s;
+  white-space: nowrap;
+}
+
+.sync-indicator.syncing {
+  opacity: 1;
+  color: var(--txt2);
+}
+
+.sync-indicator.synced {
+  opacity: 1;
+  color: var(--ok);
+}
+
+.sync-indicator.sync-error {
+  opacity: 1;
+  color: var(--warn);
+}

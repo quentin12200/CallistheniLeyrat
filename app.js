@@ -241,6 +241,281 @@ function workout(day, diffOffset = 0) {
   };
 }
 
+// ─── Sync cloud ───────────────────────────────────────────────
+const SYNC_API = '/api/sync';
+
+// Clés localStorage à synchroniser (préfixées par l'utilisateur)
+const SYNC_KEYS = [
+  'startDate', 'level', 'diffOffset', 'feedbackHistory',
+  'xp', 'badges', 'bestStreak', 'weightHistory',
+  'notifEnabled', 'notifTime', 'objective', 'rythm',
+];
+
+// Génère dynamiquement les clés done_N et feedback_N jusqu'au jour actuel + 5
+function getSyncDoneKeys() {
+  const keys = [];
+  const maxDay = dayNumber ? Math.min(dayNumber() + 5, 500) : 365;
+  for (let i = 1; i <= maxDay; i++) {
+    keys.push('done_' + i);
+    keys.push('feedback_' + i);
+    keys.push('series_progress_' + i);
+  }
+  return keys;
+}
+
+function setSyncIndicator(state) {
+  // state: '' | 'syncing' | 'synced' | 'sync-error'
+  const el = document.getElementById('syncIndicator');
+  if (!el) return;
+  el.className = 'sync-indicator' + (state ? ' ' + state : '');
+  if (state === 'syncing') {
+    el.textContent = '↕ Sync…';
+  } else if (state === 'synced') {
+    el.textContent = '✓ Sync';
+    setTimeout(() => { el.className = 'sync-indicator'; el.textContent = ''; }, 3000);
+  } else if (state === 'sync-error') {
+    el.textContent = '⚠ Hors-ligne';
+    setTimeout(() => { el.className = 'sync-indicator'; el.textContent = ''; }, 4000);
+  } else {
+    el.textContent = '';
+  }
+}
+
+async function syncToCloud() {
+  if (!currentUser || currentUser === 'invite') return;
+  const pin = localStorage.getItem(currentUser + '_pin');
+  if (!pin) return;
+
+  setSyncIndicator('syncing');
+
+  // Collecter toutes les clés pertinentes
+  const data = {};
+  const allKeys = [...SYNC_KEYS, ...getSyncDoneKeys()];
+  allKeys.forEach(k => {
+    const val = localStorage.getItem(currentUser + '_' + k);
+    if (val !== null) data[k] = val;
+  });
+
+  try {
+    const res = await fetch(SYNC_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user: currentUser, pin, data }),
+    });
+    const json = await res.json();
+    if (json.ok) {
+      setSyncIndicator('synced');
+    } else {
+      setSyncIndicator('sync-error');
+    }
+  } catch (e) {
+    // Offline — silent fail
+    setSyncIndicator('sync-error');
+  }
+}
+
+async function syncFromCloud() {
+  if (!currentUser || currentUser === 'invite') return;
+  const pin = localStorage.getItem(currentUser + '_pin');
+  if (!pin) return;
+
+  setSyncIndicator('syncing');
+
+  try {
+    const res = await fetch(`${SYNC_API}?user=${encodeURIComponent(currentUser)}&pin=${encodeURIComponent(pin)}`);
+    const json = await res.json();
+    if (!json.ok || !json.data) {
+      setSyncIndicator('');
+      return;
+    }
+
+    // Merge strategy:
+    // - done_N (workout completions): cloud wins (most permissive — if done anywhere, it's done)
+    // - Settings: cloud wins if cloud updated_at > local (we use updated_at stored in local)
+    // - weightHistory: merge by date (union)
+    const cloudData = json.data; // { key: rawStringValue, ... }
+
+    Object.entries(cloudData).forEach(([k, cloudRaw]) => {
+      if (cloudRaw === null || cloudRaw === undefined) return;
+      const localKey = currentUser + '_' + k;
+      const localRaw = localStorage.getItem(localKey);
+
+      if (k.startsWith('done_')) {
+        // Cloud wins: if cloud says done, it's done
+        if (cloudRaw === '1') localStorage.setItem(localKey, '1');
+      } else if (k === 'weightHistory') {
+        // Merge arrays by date
+        let cloud = [];
+        let local = [];
+        try { cloud = JSON.parse(cloudRaw); } catch {}
+        try { local = localRaw ? JSON.parse(localRaw) : []; } catch {}
+        const merged = [...local];
+        cloud.forEach(ce => {
+          if (!merged.find(le => le.date === ce.date && le.poids === ce.poids)) {
+            merged.push(ce);
+          }
+        });
+        merged.sort((a, b) => a.date.localeCompare(b.date));
+        localStorage.setItem(localKey, JSON.stringify(merged));
+      } else if (k === 'xp') {
+        // Take max XP
+        const cloudXP = parseInt(cloudRaw) || 0;
+        const localXP = parseInt(localRaw) || 0;
+        localStorage.setItem(localKey, String(Math.max(cloudXP, localXP)));
+      } else if (k === 'badges') {
+        // Union of badges
+        let cloud = [];
+        let local = [];
+        try { cloud = JSON.parse(cloudRaw); } catch {}
+        try { local = localRaw ? JSON.parse(localRaw) : []; } catch {}
+        const merged = Array.from(new Set([...local, ...cloud]));
+        localStorage.setItem(localKey, JSON.stringify(merged));
+      } else if (k === 'bestStreak') {
+        const cloudVal = parseInt(cloudRaw) || 0;
+        const localVal = parseInt(localRaw) || 0;
+        localStorage.setItem(localKey, String(Math.max(cloudVal, localVal)));
+      } else {
+        // For settings: cloud wins if local is empty, otherwise keep local
+        if (localRaw === null) {
+          localStorage.setItem(localKey, cloudRaw);
+        }
+        // If local exists, keep local (user may have set it on this device)
+      }
+    });
+
+    setSyncIndicator('synced');
+  } catch (e) {
+    // Offline — silent fail
+    setSyncIndicator('sync-error');
+  }
+}
+
+// ─── PIN / Authentification ───────────────────────────────────
+let _pendingUser = null;
+
+function startProfileLogin(user) {
+  // Check if PIN already stored for this device
+  const savedPin = localStorage.getItem(user + '_pin');
+  if (savedPin) {
+    // Already authenticated on this device — enter directly
+    selectProfile(user);
+    return;
+  }
+  // Show PIN screen
+  _pendingUser = user;
+  document.getElementById('profileScreen').classList.add('hidden');
+  const pinScreen = document.getElementById('pinScreen');
+  pinScreen.classList.remove('hidden');
+
+  const avatar = document.getElementById('pinAvatar');
+  avatar.textContent = user === 'quentin' ? 'Q' : 'S';
+  avatar.className = 'pin-avatar ' + user;
+  document.getElementById('pinTitle').textContent =
+    'Bonjour ' + user.charAt(0).toUpperCase() + user.slice(1) + ' !';
+  document.getElementById('pinInput').value = '';
+  document.getElementById('pinError').classList.add('hidden');
+  document.getElementById('pinLoading').classList.add('hidden');
+  document.getElementById('pinOfflineNote').style.display = 'none';
+  document.getElementById('pinSubmitBtn').disabled = true;
+  document.getElementById('pinInput').focus();
+}
+
+function onPinInput() {
+  const val = document.getElementById('pinInput').value;
+  document.getElementById('pinSubmitBtn').disabled = val.length < 6;
+  document.getElementById('pinError').classList.add('hidden');
+}
+
+function cancelPin() {
+  _pendingUser = null;
+  document.getElementById('pinScreen').classList.add('hidden');
+  document.getElementById('profileScreen').classList.remove('hidden');
+}
+
+async function submitPin() {
+  const user = _pendingUser;
+  const pin = document.getElementById('pinInput').value;
+  if (!user || pin.length < 6) return;
+
+  document.getElementById('pinSubmitBtn').disabled = true;
+  document.getElementById('pinLoading').classList.remove('hidden');
+  document.getElementById('pinError').classList.add('hidden');
+
+  try {
+    const res = await fetch(`${SYNC_API}?user=${encodeURIComponent(user)}&pin=${encodeURIComponent(pin)}`);
+    const json = await res.json();
+
+    document.getElementById('pinLoading').classList.add('hidden');
+
+    if (json.ok) {
+      // Save PIN for this device
+      localStorage.setItem(user + '_pin', pin);
+      // Merge cloud data into local
+      if (json.data) {
+        mergeCloudDataDirectly(user, json.data);
+      }
+      document.getElementById('pinScreen').classList.add('hidden');
+      selectProfile(user);
+    } else {
+      document.getElementById('pinError').classList.remove('hidden');
+      document.getElementById('pinSubmitBtn').disabled = false;
+    }
+  } catch (e) {
+    // Offline — allow entry with local data if any local data exists
+    document.getElementById('pinLoading').classList.add('hidden');
+    const hasLocalData = localStorage.getItem(user + '_startDate') !== null;
+    if (hasLocalData) {
+      document.getElementById('pinOfflineNote').style.display = 'block';
+      // Store PIN optimistically — it will be verified next time online
+      localStorage.setItem(user + '_pin', pin);
+      document.getElementById('pinScreen').classList.add('hidden');
+      selectProfile(user);
+    } else {
+      document.getElementById('pinError').textContent = 'Impossible de vérifier le PIN (hors-ligne)';
+      document.getElementById('pinError').classList.remove('hidden');
+      document.getElementById('pinSubmitBtn').disabled = false;
+    }
+  }
+}
+
+function mergeCloudDataDirectly(user, cloudData) {
+  // Same merge logic as syncFromCloud but synchronous, used during PIN verification
+  Object.entries(cloudData).forEach(([k, cloudRaw]) => {
+    if (cloudRaw === null || cloudRaw === undefined) return;
+    const localKey = user + '_' + k;
+    const localRaw = localStorage.getItem(localKey);
+
+    if (k.startsWith('done_')) {
+      if (cloudRaw === '1') localStorage.setItem(localKey, '1');
+    } else if (k === 'weightHistory') {
+      let cloud = [], local = [];
+      try { cloud = JSON.parse(cloudRaw); } catch {}
+      try { local = localRaw ? JSON.parse(localRaw) : []; } catch {}
+      const merged = [...local];
+      cloud.forEach(ce => {
+        if (!merged.find(le => le.date === ce.date && le.poids === ce.poids)) merged.push(ce);
+      });
+      merged.sort((a, b) => a.date.localeCompare(b.date));
+      localStorage.setItem(localKey, JSON.stringify(merged));
+    } else if (k === 'xp') {
+      const cloudXP = parseInt(cloudRaw) || 0;
+      const localXP = parseInt(localRaw) || 0;
+      localStorage.setItem(localKey, String(Math.max(cloudXP, localXP)));
+    } else if (k === 'badges') {
+      let cloud = [], local = [];
+      try { cloud = JSON.parse(cloudRaw); } catch {}
+      try { local = localRaw ? JSON.parse(localRaw) : []; } catch {}
+      localStorage.setItem(localKey, JSON.stringify(Array.from(new Set([...local, ...cloud]))));
+    } else if (k === 'bestStreak') {
+      const cloudVal = parseInt(cloudRaw) || 0;
+      const localVal = parseInt(localRaw) || 0;
+      localStorage.setItem(localKey, String(Math.max(cloudVal, localVal)));
+    } else {
+      if (localRaw === null) localStorage.setItem(localKey, cloudRaw);
+    }
+  });
+}
+
 // ─── Gestion des profils / localStorage ──────────────────────
 let currentUser = null; // 'quentin' | 'sophie'
 
