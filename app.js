@@ -680,6 +680,14 @@ function recordSerie(idx) {
   }
   t.doneSets++;
   renderInlineTimer(idx);
+
+  // Marquer l'exercice en vert dès que l'objectif de séries est atteint
+  const timerEl = document.getElementById(`inline-timer-${idx}`);
+  if (timerEl && t.doneSets >= t.targetSets) {
+    const itemEl = timerEl.closest('.exercise-item');
+    if (itemEl) itemEl.classList.add('exercise-item-done');
+  }
+
   checkAllSeriesDone();
 }
 
