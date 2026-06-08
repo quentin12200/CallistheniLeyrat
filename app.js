@@ -581,6 +581,7 @@ function markDone(day, feedback = 'ok') {
   awardXP(day);
   checkBadges();
   saveStreak();
+  stopSessionTimer(); // Feature 4: arrêter le minuteur de séance
   syncToCloud();
 }
 
@@ -838,6 +839,37 @@ function inlineTimerActive() {
   return Object.values(inlineTimers).some(t => t && t.running);
 }
 
+// ─── Minuteur global de séance (Feature 4) ────────────────────
+let sessionTimerInterval = null;
+let sessionTimerSeconds = 0;
+let sessionTimerStarted = false;
+
+function startSessionTimer() {
+  if (sessionTimerStarted) return;
+  sessionTimerStarted = true;
+  sessionTimerSeconds = 0;
+  const el = document.getElementById('sessionTimer');
+  if (el) el.classList.remove('hidden');
+  sessionTimerInterval = setInterval(() => {
+    sessionTimerSeconds++;
+    const m = Math.floor(sessionTimerSeconds / 60);
+    const s = sessionTimerSeconds % 60;
+    const disp = document.getElementById('sessionTimerDisplay');
+    if (disp) disp.textContent = m + ':' + String(s).padStart(2, '0');
+  }, 1000);
+}
+
+function stopSessionTimer() {
+  clearInterval(sessionTimerInterval);
+  sessionTimerInterval = null;
+  sessionTimerStarted = false;
+  sessionTimerSeconds = 0;
+  const el = document.getElementById('sessionTimer');
+  if (el) el.classList.add('hidden');
+  const disp = document.getElementById('sessionTimerDisplay');
+  if (disp) disp.textContent = '0:00';
+}
+
 // ─── Mini-timers inline avec compteur de séries ───────────────
 // structure : { remaining, initial, interval, running, targetSets, doneSets, isTimed }
 const inlineTimers = {};
@@ -855,6 +887,8 @@ function loadSeriesProgress() {
 }
 
 function startInlineTimer(idx, secs) {
+  // Feature 4: démarrer le minuteur global de séance au premier timer
+  startSessionTimer();
   const timerEl = document.getElementById('inline-timer-' + idx);
   timerEl.classList.add('visible');
 
@@ -936,7 +970,7 @@ function toggleInlineTimer(idx) {
         t.running = false;
         if (startBtn) startBtn.textContent = '▶';
         renderInlineTimer(idx);
-        if (navigator.vibrate) navigator.vibrate([200, 80, 200, 80, 400]);
+        if (navigator.vibrate) navigator.vibrate([300, 100, 300]);
         playBeep();
         if (!inlineTimerActive()) releaseWakeLock();
       }
@@ -1077,6 +1111,8 @@ function renderHome() {
   // Nettoyer les timers inline actifs de la session précédente
   Object.values(inlineTimers).forEach(t => clearInterval(t?.interval));
   for (const k in inlineTimers) delete inlineTimers[k];
+  // Feature 4: réinitialiser le minuteur global si séance déjà faite
+  if (isDone(dayNumber())) stopSessionTimer();
   const today = dayNumber();
   const w = workout(today, getDiffOffset());
   const rpg = getRPGInfo();
@@ -1091,6 +1127,34 @@ function renderHome() {
 
   // Séance du jour
   document.getElementById('workoutTitle').textContent = w.title;
+
+  // Feature 3: Jour de repos — afficher une carte de repos
+  if (w.isRest) {
+    document.getElementById('workoutExercises').innerHTML = `
+      <div class="rest-day-card">
+        <div class="rest-day-emoji">🛌</div>
+        <div class="rest-day-title">Jour de repos</div>
+        <div class="rest-day-msg">Aujourd'hui c'est repos — ton corps se reconstruit. Profites-en !</div>
+      </div>`;
+    document.getElementById('workoutNote').textContent = '';
+    document.getElementById('markDoneBtn').classList.add('hidden');
+    document.getElementById('feedbackSection').classList.add('hidden');
+    document.getElementById('seanceFinie').classList.add('hidden');
+    document.getElementById('encouragementMsg').classList.add('hidden');
+    // Render tomorrow card then RPG/stats, then return
+    renderTomorrowCard();
+    const rpg2 = getRPGInfo();
+    document.getElementById('rpgName').textContent = rpg2.name;
+    document.getElementById('rpgXP').textContent = `${rpg2.xp} XP`;
+    document.getElementById('rpgBar').style.width = rpg2.pct + '%';
+    document.getElementById('rpgNext').textContent = rpg2.next
+      ? `Prochain niveau : ${rpg2.next} (encore ${rpg2.xpToNext} XP)`
+      : 'Niveau maximum atteint — tu es un Maître ! 👑';
+    document.getElementById('statSessions').textContent = sessions;
+    document.getElementById('statStreak').textContent = streak + ' j';
+    document.getElementById('statBestStreak').textContent = getBestStreak() + ' j';
+    return;
+  }
 
   if (doneToday) {
     // Affichage "fait" : liste verte avec coches
@@ -1224,6 +1288,26 @@ function renderHome() {
   document.getElementById('statSessions').textContent = sessions;
   document.getElementById('statStreak').textContent = streak + ' j';
   document.getElementById('statBestStreak').textContent = getBestStreak() + ' j';
+
+  // Feature 2: aperçu demain
+  renderTomorrowCard();
+}
+
+// ─── Aperçu demain (Feature 2) ────────────────────────────────
+function renderTomorrowCard() {
+  const el = document.getElementById('tomorrowCard');
+  if (!el) return;
+  const tomorrowDay = dayNumber() + 1;
+  const tw = workout(tomorrowDay, getDiffOffset());
+  const exNames = tw.list.map(e => e.split(' — ')[0].trim()).join(', ');
+  el.innerHTML = `
+    <div class="card tomorrow-card">
+      <div class="card-title">👀 Demain — Jour ${tomorrowDay}</div>
+      <div class="workout-title" style="font-size:1rem;">${tw.title}</div>
+      ${tw.isRest
+        ? `<div class="rest-day-msg" style="margin-top:8px;">😴 Jour de repos</div>`
+        : `<div class="tomorrow-exercises">${exNames}</div>`}
+    </div>`;
 }
 
 // ─── Rendu — Calendrier ───────────────────────────────────────
@@ -1284,7 +1368,13 @@ function renderCalendar() {
       }
     }
 
-    html += `<div class="${cls}" title="${title}">${d}</div>`;
+    // Feature 3: afficher label workout/repos dans la cellule
+    let cellLabel = '';
+    if (title && !isBeforeStart && !isFuture) {
+      const shortTitle = title === 'Repos' ? 'Repos' : title.split(' — ')[0].split(' / ')[0].slice(0, 10);
+      cellLabel = `<div class="cal-cell-label">${shortTitle}</div>`;
+    }
+    html += `<div class="${cls}" title="${title}">${d}${cellLabel}</div>`;
   }
 
   document.getElementById('calGrid').innerHTML = html;
@@ -1352,7 +1442,18 @@ function saveSettings() {
   store('notifEnabled', document.getElementById('settingNotifEnabled').checked);
   store('objective', document.getElementById('settingObjective').value);
   store('rythm', document.getElementById('settingRythm').value);
-  scheduleNotifications();
+  // Feature 6: demander permission si notifications activées
+  if (document.getElementById('settingNotifEnabled').checked) {
+    if (!('Notification' in window)) {
+      showToast('Les notifications ne sont pas supportées sur cet appareil.');
+    } else if (Notification.permission === 'default') {
+      Notification.requestPermission().then(p => {
+        if (p === 'granted') scheduleNotifications();
+      });
+    } else if (Notification.permission === 'granted') {
+      scheduleNotifications();
+    }
+  }
   showToast('Réglages enregistrés ✓');
   renderHome();
   syncToCloud();
@@ -1479,6 +1580,8 @@ function selectProfile(user) {
   if (!isDone(dayNumber())) requestWakeLock();
   // Sync depuis le cloud (background — ne bloque pas l'affichage)
   syncFromCloud();
+  // Feature 6: vérifier si une notification doit être envoyée maintenant
+  setTimeout(checkAndFireNotificationIfDue, 1000);
 }
 
 function switchProfile() {
@@ -1659,6 +1762,81 @@ function drawWeightChart(canvasId, data, label, color) {
   });
 }
 
+// ─── Graphique progression 28 jours (Feature 1) ──────────────
+function drawProgressionChart() {
+  const canvas = document.getElementById('progressionChart');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.offsetWidth || 320;
+  canvas.width = W;
+  const H = 110;
+  canvas.height = H;
+  const today = dayNumber();
+  const startOffset = today - 27; // day index for 28 days ago
+
+  const BAR_W = Math.floor((W - 8) / 28) - 2;
+  const BAR_AREA_H = 60;
+  const BAR_Y = 8;
+  const LABEL_Y = H - 18;
+  const WEEK_Y = H - 4;
+
+  ctx.clearRect(0, 0, W, H);
+
+  for (let i = 0; i < 28; i++) {
+    const dayIdx = startOffset + i; // programme day number
+    const isToday = dayIdx === today;
+    const isFuture = dayIdx > today;
+    const x = 4 + i * (BAR_W + 2);
+
+    let color = '#e0e0e0'; // default: future
+    if (!isFuture && dayIdx >= 1) {
+      const w = workout(dayIdx);
+      if (isToday) {
+        color = '#e07b00'; // orange = aujourd'hui
+      } else if (w.isRest) {
+        color = '#2563eb'; // bleu = repos
+      } else if (isDone(dayIdx)) {
+        color = '#1f8a4c'; // vert = fait
+      } else {
+        color = '#991b1b'; // rouge foncé = manquée
+      }
+    } else if (dayIdx < 1) {
+      color = '#f0f0f0'; // avant le début
+    }
+
+    ctx.fillStyle = color;
+    const barH = isToday ? BAR_AREA_H : (isFuture || dayIdx < 1 ? BAR_AREA_H * 0.4 : BAR_AREA_H);
+    const bx = x, by = BAR_Y + (BAR_AREA_H - barH), bw = BAR_W, bh = barH, br = 3;
+    ctx.beginPath();
+    if (ctx.roundRect) {
+      ctx.roundRect(bx, by, bw, bh, br);
+    } else {
+      ctx.rect(bx, by, bw, bh);
+    }
+    ctx.fill();
+  }
+
+  // Semaine labels
+  ctx.fillStyle = '#888';
+  ctx.font = '9px sans-serif';
+  ctx.textAlign = 'center';
+  for (let w = 0; w < 4; w++) {
+    const midX = 4 + w * 7 * (BAR_W + 2) + 3.5 * (BAR_W + 2);
+    ctx.fillText('S' + (w + 1), midX, WEEK_Y);
+  }
+
+  // Légende ligne de séparation semaines
+  ctx.strokeStyle = '#e0e0e0';
+  ctx.lineWidth = 1;
+  for (let w = 1; w < 4; w++) {
+    const lx = 4 + w * 7 * (BAR_W + 2) - 1;
+    ctx.beginPath();
+    ctx.moveTo(lx, BAR_Y);
+    ctx.lineTo(lx, BAR_Y + BAR_AREA_H);
+    ctx.stroke();
+  }
+}
+
 function renderDashboard() {
   const rpg = getRPGInfo();
   const sessions = countDoneSessions();
@@ -1676,6 +1854,12 @@ function renderDashboard() {
   }));
 
   document.getElementById('dashContent').innerHTML = `
+    <div class="card">
+      <div class="card-title">📈 Progression — 4 dernières semaines</div>
+      <canvas id="progressionChart" width="320" height="110" style="width:100%;height:110px;border-radius:8px;display:block;"></canvas>
+      <div class="progression-week-labels" id="progressionWeekLabels"></div>
+    </div>
+
     <div class="card">
       <div class="card-title">Statistiques</div>
       <div class="stat-row"><span class="stat-label">Séances totales</span><span class="stat-value">${sessions}</span></div>
@@ -1734,6 +1918,7 @@ function renderDashboard() {
 
   // Dessiner les graphiques après rendu DOM
   requestAnimationFrame(() => {
+    drawProgressionChart();
     if (weightData.length > 0) drawWeightChart('weightChart', weightData, 'poids', '#d71920');
     if (tailleData.length > 0) drawWeightChart('tailleChart', tailleData, 'tour de taille', '#2563eb');
   });
@@ -1749,6 +1934,44 @@ function handleSaveMeasure() {
   saveWeight(date, poids || null, taille || null, note);
   showToast('Mesure enregistrée !');
   renderDashboard();
+}
+
+// ─── Vérification notification au chargement (Feature 6) ─────
+function checkAndFireNotificationIfDue() {
+  // Needs a user context; called after selectProfile
+  if (!currentUser || currentUser === 'invite') return;
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  if (!load('notifEnabled', false)) return;
+
+  const notifTime = load('notifTime', '08:00');
+  const [h, m] = notifTime.split(':').map(Number);
+  const now = new Date();
+  const nowMins = now.getHours() * 60 + now.getMinutes();
+  const targetMins = h * 60 + m;
+  const diff = nowMins - targetMins;
+
+  // Fire if within a ±5 min window around the scheduled time
+  if (diff < -5 || diff > 5) return;
+
+  const today = todayISO();
+  if (load('notifSentDate') === today) return; // already sent today
+
+  store('notifSentDate', today);
+
+  const streak = getStreak();
+  const body = streak > 1
+    ? `Plus qu'une séance pour battre ton record de ${streak} jours ! Tu assures.`
+    : 'C\'est l\'heure de ta séance du jour. Ton futur toi te remerciera ! 💪';
+
+  navigator.serviceWorker.ready.then(reg => {
+    reg.showNotification('CallistheniLeyrat — Séance du jour 🏋️', {
+      body,
+      icon: '/icons/icon-192.png',
+      badge: '/icons/icon-192.png',
+      vibrate: [200, 100, 200],
+      tag: 'callistheni-reminder'
+    });
+  }).catch(() => {});
 }
 
 // ─── Init ─────────────────────────────────────────────────────
