@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mon programme callisthénie évolutif</title>
+<style>
+:root{--red:#d71920;--dark:#171717;--soft:#f5f5f5;--ok:#1f8a4c;--warn:#ffb703;--card:#fff;--txt:#222}
+*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:linear-gradient(160deg,#fff,#f1f1f1);color:var(--txt)}
+header{background:var(--dark);color:white;padding:22px 16px;text-align:center}header h1{margin:0;font-size:1.55rem}header p{margin:8px auto 0;max-width:850px;opacity:.9}
+main{max-width:1100px;margin:auto;padding:16px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}.card{background:var(--card);border-radius:16px;padding:16px;box-shadow:0 4px 15px #0001;border:1px solid #ddd}.big{font-size:2.1rem;font-weight:800;color:var(--red)}
+button,input,select{font-size:1rem;border-radius:10px;border:1px solid #bbb;padding:10px}button{background:var(--red);color:white;border:0;cursor:pointer;font-weight:700}button.secondary{background:#333}button.ghost{background:white;color:#222;border:1px solid #bbb}.timer{font-size:3rem;font-weight:900;text-align:center;margin:10px}.controls{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}.calendar{display:grid;grid-template-columns:repeat(auto-fill,minmax(125px,1fr));gap:10px}.day{background:white;border:1px solid #ddd;border-radius:14px;padding:10px;cursor:pointer;min-height:95px}.day.done{background:#e6f6ed;border-color:var(--ok)}.day.today{outline:3px solid var(--red)}.day .num{font-weight:800;color:var(--red)}.tag{display:inline-block;background:#eee;border-radius:999px;padding:4px 8px;font-size:.8rem;margin-top:6px}.level{background:#fff3cd}.danger{background:#ffe9e9;border-left:5px solid var(--red)}.ok{background:#e6f6ed;border-left:5px solid var(--ok)}
+.exercise{border-left:4px solid var(--red);padding:10px;margin:8px 0;background:#fafafa;border-radius:10px}.small{font-size:.9rem;color:#555}.hidden{display:none}.progressbar{height:15px;background:#ddd;border-radius:999px;overflow:hidden}.progressbar div{height:100%;background:var(--red);width:0%}footer{text-align:center;padding:25px;color:#666}.weekTitle{margin-top:26px}.pill{display:inline-block;padding:7px 10px;background:#111;color:white;border-radius:999px;margin:3px;font-size:.85rem}
+</style>
+</head>
+<body>
+<header>
+<h1>Programme callisthénie évolutif — sans matériel</h1>
+<p>Départ tranquille, progression après 28 jours, calendrier, minuteur et suivi. Objectif : reprendre sans se cramer, puis augmenter progressivement la difficulté.</p>
+</header>
+<main>
+<section class="grid">
+<div class="card"><h2>Réglages</h2><label>Date de départ<br><input type="date" id="startDate"></label><br><br><label>Niveau de départ<br><select id="level"><option value="facile">Reprise tranquille</option><option value="normal">Normal</option><option value="fort">Déjà à l'aise</option></select></label><br><br><button onclick="saveSettings()">Enregistrer</button></div>
+<div class="card"><h2>Avancement</h2><div class="big" id="currentDay">Jour 1</div><div class="progressbar"><div id="progressFill"></div></div><p id="progressText" class="small"></p></div>
+<div class="card"><h2>Timer séance</h2><div class="timer" id="timer">00:30</div><div class="controls"><button onclick="startTimer()">Démarrer</button><button class="secondary" onclick="pauseTimer()">Pause</button><button class="ghost" onclick="resetTimer()">Reset</button></div><br><div class="controls"><button class="ghost" onclick="setTimer(30)">30s</button><button class="ghost" onclick="setTimer(45)">45s</button><button class="ghost" onclick="setTimer(60)">1 min</button><button class="ghost" onclick="setTimer(90)">1min30</button></div></div>
+</section>
+<section class="card danger"><h2>Règles simples pour toi</h2><p>Tu dois finir la séance en te disant : “j'aurais pu faire un peu plus”. Si douleur articulaire, vertige, douleur thoracique ou essoufflement anormal : tu arrêtes. Le but n'est pas de prouver, c'est de construire.</p></section>
+<section class="card ok"><h2>Comment ça progresse après 28 jours ?</h2><p>Après le jour 28, le programme continue par cycles de 4 semaines. À chaque nouveau cycle : soit tu ajoutes 1 tour de circuit, soit tu ajoutes 5 répétitions, soit tu passes à une variante plus difficile. Jamais les trois en même temps.</p><span class="pill">Cycle 1 : apprendre</span><span class="pill">Cycle 2 : + volume</span><span class="pill">Cycle 3 : variantes plus dures</span><span class="pill">Cycle 4 : moins de repos</span></section>
+<section class="card"><h2>Séance du jour</h2><div id="todayWorkout"></div><button onclick="markTodayDone()">Marquer comme fait</button></section>
+<section class="card"><h2>Calendrier</h2><div id="calendar" class="calendar"></div></section>
+<section class="card"><h2>Bibliothèque des mouvements</h2><div id="explain"></div></section>
+</main>
+<footer>Fichier local : tes cases cochées restent enregistrées dans ton navigateur.</footer>
+<script>
+const exercises={
+"Montées de genoux": "Monte les genoux doucement, sans sauter au début. Respire, garde le buste droit. Version facile : marche active sur place.",
+"Footing sur place": "Trottine léger. Version facile : marche rapide. Version dure : genoux plus hauts.",
+"Squats": "Pieds largeur hanches, fesses vers l'arrière, dos droit. Descends seulement tant que tu contrôles.",
+"Dips chaise": "Mains sur chaise stable, coudes vers l'arrière. Version facile : pieds proches. Attention aux épaules.",
+"Pompes mur": "Mains contre le mur, corps gainé. Plus tes pieds sont loin, plus c'est dur.",
+"Pompes genoux": "Au sol sur les genoux, corps aligné. Descends contrôlé, remonte en soufflant.",
+"Pompes sol": "Version plus difficile : corps en planche. Garde les abdos serrés.",
+"Pont fessier": "Allongé sur le dos, pieds au sol, monte le bassin. Serre les fessiers en haut.",
+"Chaise": "Dos au mur, cuisses descendues. Version facile : moins bas. Respire.",
+"Gainage face": "Sur coudes ou mains. Le corps fait une planche. Version facile : genoux au sol.",
+"Gainage côté": "Sur un coude, côté droit puis gauche. Version facile : genoux au sol.",
+"Superman": "Sur le ventre, décolle doucement bras et jambes. Ne casse pas la nuque.",
+"Fentes": "Un pied devant, descends droit, remonte. Version facile : petite amplitude ou appui au mur.",
+"Jumping jack": "Ouvre et ferme bras/jambes. Version facile : sans saut, un pied après l'autre.",
+"Mountain climbers": "En planche, ramène les genoux. Version facile : lentement, mains sur une table.",
+"Étirements": "Respiration lente : psoas, dos, ischios, mollets, quadriceps. Ne force pas."
+};
+function baseWeek(day){const d=((day-1)%7)+1;return ["Complet doux","Bas du corps","Haut du corps","Étirements","Abdos / dos","Bas du corps","Haut du corps"][d-1]}
+function cycle(day){return Math.floor((day-1)/28)+1}
+function workout(day){let c=cycle(day), d=((day-1)%7)+1;let hard=c-1;let sets= c===1?3:Math.min(5,3+Math.floor((c-1)/2));let rest=Math.max(30,60-(c-1)*5);let reps=15+Math.min(15,hard*3);let plank=30+Math.min(45,hard*5);let title=baseWeek(day);let list=[];
+if(day<=14){ if(d===1)list=[`Montées de genoux — 3 x 20`,`Squats — 3 x 15`,`Dips chaise — 3 x 10 à 15`,`Pompes mur — 3 x 15`]; if(d===2)list=[`Footing sur place — 3 x 1 min`,`Squats — 3 x 15`,`Pont fessier — 3 x 15`,`Chaise — 3 x 30s`]; if(d===3)list=[`Montées de genoux — 3 x 20`,`Pompes mur — 3 x 15`,`Dips chaise — 3 x 10 à 15`,`Pompes genoux — 3 x 8 à 12`]; if(d===4)list=[`Étirements — 10 à 15 min`]; if(d===5)list=[`Montées de genoux — 3 x 20`,`Squats — 3 x 15`,`Gainage côté — 2 x 30s par côté`,`Superman — 3 x 15`]; if(d===6)list=[`Montées de genoux — 3 x 20`,`Squats — 3 x 15`,`Pont fessier — 3 x 15`,`Fentes — 2 x 30s par jambe`]; if(d===7)list=[`Footing sur place — 3 x 1 min`,`Pompes mur — 3 x 15`,`Gainage face — 3 x 30s`,`Dips chaise — 3 x 10 à 15`]; return {title, list, note:"Récupération : 1 min entre exercices, 30s entre séries."}}
+let circuit={1:["Jumping jack","Fentes","Pont fessier","Gainage face","Pompes mur"],2:["Footing sur place","Chaise","Pont fessier","Squats","Fentes"],3:["Montées de genoux","Pompes mur","Dips chaise","Pompes genoux","Mountain climbers"],4:["Jumping jack","Gainage côté droit","Gainage côté gauche","Gainage face","Superman"],5:["Étirements"],6:["Jumping jack","Fentes","Chaise","Pont fessier","Squats"],7:["Montées de genoux","Pompes genoux","Dips chaise","Pompes sol","Gainage face"]};
+if(d===5)return {title, list:["Étirements — 12 à 20 min"], note:"Jour utile : récupérer, respirer, garder l'habitude."};
+let rounds= day<=21?2:3; rounds+=Math.max(0,c-1); rounds=Math.min(rounds,6); list=circuit[d].map(x=>`${x} — ${x.includes('Gainage')||x==='Chaise'?plank+'s':reps+' reps'}`); return {title:title+` — circuit ${rounds} tours`, list, note:`Repos : ${rest}s entre exercices, 1 à 2 min entre les tours. Après 28 jours, ce jour continue automatiquement en cycle ${c}.`}}
+function getStart(){return localStorage.getItem('startDate')||new Date().toISOString().slice(0,10)}
+function dayNumber(){let s=new Date(getStart()+"T00:00:00"), n=new Date(); n.setHours(0,0,0,0); return Math.max(1,Math.floor((n-s)/86400000)+1)}
+let remaining=30, interval=null, initial=30;function setTimer(s){initial=s;remaining=s;renderTimer()}function renderTimer(){timer.textContent=String(Math.floor(remaining/60)).padStart(2,'0')+':'+String(remaining%60).padStart(2,'0')}function startTimer(){if(interval)return;interval=setInterval(()=>{if(remaining>0){remaining--;renderTimer()}else{clearInterval(interval);interval=null;alert('Temps terminé !')}} ,1000)}function pauseTimer(){clearInterval(interval);interval=null}function resetTimer(){pauseTimer();remaining=initial;renderTimer()}
+function saveSettings(){localStorage.setItem('startDate',startDate.value);localStorage.setItem('level',level.value);render()}function doneKey(d){return 'done_'+d}function markTodayDone(){localStorage.setItem(doneKey(dayNumber()),'1');render()}
+function render(){startDate.value=getStart();level.value=localStorage.getItem('level')||'facile';let today=dayNumber();currentDay.textContent='Jour '+today+' — Cycle '+cycle(today);let done=0;for(let i=1;i<=Math.max(28,today);i++)if(localStorage.getItem(doneKey(i)))done++;let total=Math.max(28,today);progressFill.style.width=(done/total*100)+'%';progressText.textContent=done+' séance(s) faite(s) sur '+total+' jour(s) affiché(s).';let w=workout(today);todayWorkout.innerHTML=`<h3>${w.title}</h3>${w.list.map(e=>`<div class="exercise">${e}</div>`).join('')}<p class="small">${w.note}</p>`;let html='';for(let i=1;i<=Math.max(56,today+7);i++){let ww=workout(i);html+=`<div class="day ${i===today?'today':''} ${localStorage.getItem(doneKey(i))?'done':''}" onclick="showDay(${i})"><div class="num">Jour ${i}</div><b>${ww.title}</b><br><span class="tag">Cycle ${cycle(i)}</span></div>`}calendar.innerHTML=html;explain.innerHTML=Object.entries(exercises).map(([k,v])=>`<div class="exercise"><b>${k}</b><br><span class="small">${v}</span></div>`).join('')}
+function showDay(i){let w=workout(i);todayWorkout.innerHTML=`<h3>Jour ${i} — ${w.title}</h3>${w.list.map(e=>`<div class="exercise">${e}</div>`).join('')}<p class="small">${w.note}</p><button onclick="localStorage.setItem(doneKey(${i}),'1');render()">Marquer ce jour comme fait</button>`;window.scrollTo({top:360,behavior:'smooth'})}
+render();renderTimer();
+</script>
+</body></html>
