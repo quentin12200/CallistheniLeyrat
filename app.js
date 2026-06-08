@@ -1081,11 +1081,12 @@ function showToast(msg) {
 // ─── Sélection de profil ─────────────────────────────────────
 function selectProfile(user) {
   currentUser = user;
-  localStorage.setItem('lastUser', user);
+  // Ne pas mémoriser le profil invité pour ne pas bloquer Quentin/Sophie au prochain lancement
+  if (user !== 'invite') localStorage.setItem('lastUser', user);
   document.getElementById('profileScreen').classList.add('hidden');
   document.getElementById('app').classList.remove('hidden');
-  document.getElementById('topbarProfileName').textContent =
-    user.charAt(0).toUpperCase() + user.slice(1);
+  const displayName = user === 'invite' ? 'Invité' : user.charAt(0).toUpperCase() + user.slice(1);
+  document.getElementById('topbarProfileName').textContent = displayName;
 
   // Demander permission notif après la première interaction
   const sessions = countDoneSessions();

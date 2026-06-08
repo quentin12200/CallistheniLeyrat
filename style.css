@@ -892,3 +892,37 @@ html, body {
   color: var(--txt2);
   margin-bottom: 2px;
 }
+
+/* ===== Profil invité ===== */
+.guest-separator {
+  color: var(--txt2);
+  font-size: 0.85rem;
+  letter-spacing: 0.1em;
+}
+
+.profile-btn-guest {
+  width: 100%;
+  max-width: 300px;
+  flex-direction: row;
+  padding: 16px 20px;
+  gap: 14px;
+  border-style: dashed;
+  justify-content: flex-start;
+}
+
+.profile-avatar.guest {
+  width: 48px;
+  height: 48px;
+  font-size: 1.4rem;
+  background: #f0f0f0;
+  color: var(--txt2);
+  flex-shrink: 0;
+}
+
+.guest-note {
+  font-size: 0.78rem;
+  color: var(--txt2);
+  font-weight: 400;
+  text-align: left;
+  line-height: 1.4;
+}
