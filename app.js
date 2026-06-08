@@ -451,35 +451,91 @@ function playBeep() {
   } catch (e) { /* silencieux si le contexte audio échoue */ }
 }
 
-// ─── Mini-timers inline (un par exercice) ────────────────────
-const inlineTimers = {}; // { index: { remaining, initial, interval, running } }
+// ─── Wake Lock (écran allumé pendant la séance) ───────────────
+let wakeLock = null;
+
+async function requestWakeLock() {
+  if (!('wakeLock' in navigator)) return;
+  try {
+    wakeLock = await navigator.wakeLock.request('screen');
+  } catch (e) { /* silencieux si refusé */ }
+}
+
+function releaseWakeLock() {
+  if (wakeLock) { wakeLock.release(); wakeLock = null; }
+}
+
+// Réacquérir le wake lock si la page redevient visible
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && inlineTimerActive()) requestWakeLock();
+});
+
+function inlineTimerActive() {
+  return Object.values(inlineTimers).some(t => t && t.running);
+}
+
+// ─── Mini-timers inline avec compteur de séries ───────────────
+// structure : { remaining, initial, interval, running, targetSets, doneSets, isTimed }
+const inlineTimers = {};
 
 function startInlineTimer(idx, secs) {
   const timerEl = document.getElementById('inline-timer-' + idx);
   timerEl.classList.add('visible');
 
   if (!inlineTimers[idx]) {
-    const initial = secs > 0 ? secs : 30;
-    inlineTimers[idx] = { remaining: initial, initial, interval: null, running: false };
+    const initial = secs > 0 ? secs : 0; // 0 = pas chronométré (reps libres)
+    const targetSets = parseInt(timerEl.dataset.sets) || 3;
+    inlineTimers[idx] = {
+      remaining: initial, initial, interval: null, running: false,
+      targetSets, doneSets: 0, isTimed: secs > 0
+    };
   }
   renderInlineTimer(idx);
   timerEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  requestWakeLock();
 }
 
 function renderInlineTimer(idx) {
   const t = inlineTimers[idx];
   if (!t) return;
-  const m = Math.floor(t.remaining / 60);
-  const s = t.remaining % 60;
+
+  // Affichage chrono
   const el = document.getElementById('inline-display-' + idx);
-  if (!el) return;
-  el.textContent = String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
-  el.className = 'inline-timer-display' + (t.running ? ' running' : (t.remaining === 0 ? ' finished' : ''));
+  if (el) {
+    if (t.isTimed) {
+      const m = Math.floor(t.remaining / 60);
+      const s = t.remaining % 60;
+      el.textContent = String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+    } else {
+      el.textContent = '—';
+    }
+    el.className = 'inline-timer-display' +
+      (t.running ? ' running' : (t.remaining === 0 && t.isTimed ? ' finished' : ''));
+  }
+
+  // Compteur de séries
+  const counterEl = document.getElementById('inline-counter-' + idx);
+  if (counterEl) {
+    const over = t.doneSets > t.targetSets;
+    counterEl.textContent = `${t.doneSets}/${t.targetSets}`;
+    counterEl.className = 'inline-series-counter' +
+      (over ? ' over' : (t.doneSets === t.targetSets ? ' done' : ''));
+  }
+
+  // Bouton "Série faite"
+  const serieBtn = document.getElementById('inline-serie-btn-' + idx);
+  if (serieBtn) {
+    serieBtn.textContent = t.doneSets === 0
+      ? '✓ Première série !'
+      : t.doneSets < t.targetSets
+        ? `✓ Série ${t.doneSets + 1}/${t.targetSets}`
+        : `✓ Série bonus ${t.doneSets + 1} 🔥`;
+  }
 }
 
 function toggleInlineTimer(idx) {
   const t = inlineTimers[idx];
-  if (!t) return;
+  if (!t || !t.isTimed) return;
   const startBtn = document.querySelector(`#inline-timer-${idx} .inline-btn-start`);
   if (t.running) {
     clearInterval(t.interval);
@@ -487,6 +543,7 @@ function toggleInlineTimer(idx) {
     t.running = false;
     if (startBtn) startBtn.textContent = '▶';
     renderInlineTimer(idx);
+    if (!inlineTimerActive()) releaseWakeLock();
   } else {
     if (t.remaining === 0) { t.remaining = t.initial; }
     t.running = true;
@@ -503,6 +560,7 @@ function toggleInlineTimer(idx) {
         renderInlineTimer(idx);
         if (navigator.vibrate) navigator.vibrate([200, 80, 200, 80, 400]);
         playBeep();
+        if (!inlineTimerActive()) releaseWakeLock();
       }
     }, 1000);
   }
@@ -518,6 +576,88 @@ function resetInlineTimer(idx) {
   const startBtn = document.querySelector(`#inline-timer-${idx} .inline-btn-start`);
   if (startBtn) startBtn.textContent = '▶';
   renderInlineTimer(idx);
+}
+
+function recordSerie(idx) {
+  const t = inlineTimers[idx];
+  if (!t) return;
+  // Si timer chronométré : le remettre à zéro pour la prochaine série
+  if (t.isTimed) {
+    clearInterval(t.interval);
+    t.interval = null;
+    t.running = false;
+    t.remaining = t.initial;
+    const startBtn = document.querySelector(`#inline-timer-${idx} .inline-btn-start`);
+    if (startBtn) startBtn.textContent = '▶';
+  }
+  t.doneSets++;
+  renderInlineTimer(idx);
+  checkAllSeriesDone();
+}
+
+// Vérifie si tous les exercices ont atteint leur objectif de séries
+function checkAllSeriesDone() {
+  const keys = Object.keys(inlineTimers);
+  if (keys.length === 0) return;
+  const allDone = keys.every(k => {
+    const t = inlineTimers[k];
+    return t && t.doneSets >= t.targetSets;
+  });
+  if (!allDone) return;
+
+  const seanceFinieEl = document.getElementById('seanceFinie');
+  if (!seanceFinieEl || !seanceFinieEl.classList.contains('hidden')) return;
+
+  // Calculer les bonus séries
+  const totalSeries = Object.values(inlineTimers).reduce((s, t) => s + (t?.doneSets || 0), 0);
+  const targetTotal = Object.values(inlineTimers).reduce((s, t) => s + (t?.targetSets || 0), 0);
+  const bonusSeries = totalSeries - targetTotal;
+  const depassement = bonusSeries > 0;
+
+  // Choisir emoji et message
+  const emojis = depassement
+    ? ['🔥', '⚡', '💥']
+    : ['🎉', '🏆', '💪', '🌟'];
+  const emoji = emojis[Math.floor(Math.random() * emojis.length)];
+
+  const msgs = depassement ? [
+    `Tu as dépassé l'objectif avec ${bonusSeries} série${bonusSeries > 1 ? 's' : ''} bonus ! Tu repousses tes limites. 🚀`,
+    `${bonusSeries} série${bonusSeries > 1 ? 's' : ''} de plus que prévu — ton corps est plus fort que tu ne le crois !`,
+    `Dépassement x${bonusSeries} ! Tu assures vraiment. Continue comme ça !`
+  ] : [
+    'Tu l\'as fait ! Chaque séance compte, et celle-là, elle est dans la boîte.',
+    'Bravo ! La régularité, c\'est le vrai secret du progrès.',
+    'Belle séance ! Ton futur toi te remercie déjà.',
+    'C\'est fait ! Un jour de plus dans la bonne direction.',
+  ];
+  const msg = msgs[Math.floor(Math.random() * msgs.length)];
+
+  document.getElementById('seanceFinieEmoji').textContent = emoji;
+  document.getElementById('seanceFinieTitle').textContent = depassement ? 'Objectif dépassé !' : 'Séance terminée !';
+  document.getElementById('seanceFinieMsg').textContent = msg;
+
+  // Stats de la séance
+  const today = dayNumber();
+  const tomorrowW = workout(today + 1, getDiffOffset());
+  document.getElementById('seanceFinieStats').innerHTML = `
+    <div class="seance-finie-stat">
+      <div class="seance-finie-stat-val">${totalSeries}</div>
+      <div class="seance-finie-stat-lbl">Séries totales</div>
+    </div>
+    ${depassement ? `<div class="seance-finie-stat">
+      <div class="seance-finie-stat-val">+${bonusSeries}</div>
+      <div class="seance-finie-stat-lbl">Bonus</div>
+    </div>` : ''}
+    <div class="seance-finie-stat">
+      <div class="seance-finie-stat-val">Demain</div>
+      <div class="seance-finie-stat-lbl">${tomorrowW.isRest ? '😴 Récup' : tomorrowW.title}</div>
+    </div>
+  `;
+
+  seanceFinieEl.classList.remove('hidden');
+  setTimeout(() => seanceFinieEl.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+  releaseWakeLock();
+  if (navigator.vibrate) navigator.vibrate([100, 50, 100, 50, 300]);
 }
 
 // ─── Navigation ───────────────────────────────────────────────
@@ -555,47 +695,66 @@ function renderHome() {
   document.getElementById('workoutTitle').textContent = w.title;
   document.getElementById('workoutExercises').innerHTML = w.list
     .map((e, i) => {
-      // Détecte si c'est un exercice chronométré (gainage, chaise, etc.)
+      // Extraire durée si chrono
       const secMatch = e.match(/(\d+)s/);
       const minMatch = e.match(/(\d+)\s*min/);
       let secs = null;
       if (secMatch) secs = parseInt(secMatch[1]);
       else if (minMatch) secs = parseInt(minMatch[1]) * 60;
 
-      const timerBtn = secs
+      // Extraire le nombre de séries cible (ex: "3 x 15" → 3, "2 x 30s" → 2)
+      const setsMatch = e.match(/(\d+)\s*x/);
+      const targetSets = setsMatch ? parseInt(setsMatch[1]) : 3;
+
+      const goBtn = secs
         ? `<button class="exercise-start-btn" onclick="startInlineTimer(${i}, ${secs})">⏱ ${secs}s</button>`
         : `<button class="exercise-start-btn" onclick="startInlineTimer(${i}, 0)">▶ Go</button>`;
+
+      const timerControls = secs
+        ? `<button class="inline-btn inline-btn-start" onclick="toggleInlineTimer(${i})">▶</button>
+           <button class="inline-btn inline-btn-reset" onclick="resetInlineTimer(${i})">↺</button>`
+        : ``;
 
       return `
         <div class="exercise-item">
           <div class="exercise-item-top">
             <span class="exercise-item-label">${e}</span>
-            ${timerBtn}
+            ${goBtn}
           </div>
-          <div class="exercise-inline-timer" id="inline-timer-${i}">
-            <div class="inline-timer-display" id="inline-display-${i}">
-              ${secs ? (Math.floor(secs/60)+'\''+String(secs%60).padStart(2,'0')) : '00:00'}
-            </div>
-            <div class="inline-timer-controls">
-              <button class="inline-btn inline-btn-start" onclick="toggleInlineTimer(${i})">▶</button>
-              <button class="inline-btn inline-btn-reset" onclick="resetInlineTimer(${i})">↺</button>
+          <div class="exercise-inline-timer" id="inline-timer-${i}" data-sets="${targetSets}">
+            <div style="display:flex;flex-direction:column;gap:8px;width:100%;">
+              <div style="display:flex;align-items:center;gap:10px;">
+                <div class="inline-timer-display" id="inline-display-${i}">
+                  ${secs ? (String(Math.floor(secs/60)).padStart(2,'0')+':'+String(secs%60).padStart(2,'0')) : '—'}
+                </div>
+                <div class="inline-timer-controls" style="gap:6px;">
+                  ${timerControls}
+                </div>
+                <div class="inline-series-counter" id="inline-counter-${i}">0/${targetSets}</div>
+              </div>
+              <button class="inline-btn inline-btn-serie" id="inline-serie-btn-${i}" onclick="recordSerie(${i})">
+                ✓ Première série !
+              </button>
             </div>
           </div>
         </div>`;
     }).join('');
   document.getElementById('workoutNote').textContent = w.note;
 
-  // Bouton marquer fait
+  // État séance : déjà faite ou en cours
   const doneBtn = document.getElementById('markDoneBtn');
   const feedbackSection = document.getElementById('feedbackSection');
+  const seanceFinie = document.getElementById('seanceFinie');
   if (doneToday) {
     doneBtn.classList.add('hidden');
     feedbackSection.classList.add('hidden');
+    seanceFinie.classList.add('hidden');
     document.getElementById('encouragementMsg').classList.remove('hidden');
     document.getElementById('encouragementMsg').textContent = randomEncouragement();
   } else {
-    doneBtn.classList.remove('hidden');
+    doneBtn.classList.add('hidden'); // remplacé par le bouton dans seanceFinie
     feedbackSection.classList.remove('hidden');
+    seanceFinie.classList.add('hidden');
     document.getElementById('encouragementMsg').classList.add('hidden');
   }
 
