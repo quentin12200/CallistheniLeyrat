@@ -13,3 +13,4 @@ Thumbs.db
 
 # Dépendances (si on ajoute un outil de build plus tard)
 node_modules/
+.claude/

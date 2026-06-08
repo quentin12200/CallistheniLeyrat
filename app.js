@@ -6,84 +6,164 @@
 // ─── Données des exercices ────────────────────────────────────
 const EXERCISES = {
   "Montées de genoux": {
-    desc: "Monte les genoux doucement, sans sauter au début. Respire, garde le buste droit.",
-    tip: "Version facile : marche active sur place. Pose les mains sur les hanches pour garder l'équilibre.",
-    muscles: ["Abdos", "Cardio", "Jambes"]
+    desc: "Monter alternativement les genoux vers la poitrine en touchant le genou avec le coude opposé. Garder un rythme régulier et souffler lors de la montée.",
+    tip: "Version facile : marche active sur place, sans toucher le coude. Garde les épaules relâchées.",
+    muscles: ["Abdos", "Cardio", "Coordination"],
+    difficulty: 1,
+    errors: ["Ne pas creuser le dos", "Éviter de pencher le buste en avant"],
+    variantEasy: "Marche rapide sur place",
+    variantHard: "Genoux plus hauts, rythme plus rapide",
+    imagePath: "images exercices/Montées de genoux sans sauter.avif"
   },
   "Footing sur place": {
-    desc: "Trottine léger, pieds qui décollent à peine du sol. Garde les épaules relâchées.",
-    tip: "Version facile : marche rapide. Version dure : genoux plus hauts.",
-    muscles: ["Cardio", "Mollets", "Jambes"]
+    desc: "Courir sur place à allure modérée. Respirer naturellement, garder le buste droit.",
+    tip: "Version facile : marche rapide. Atterris sur l'avant du pied pour moins de bruit.",
+    muscles: ["Cardio", "Mollets", "Jambes"],
+    difficulty: 1,
+    errors: ["Ne pas frapper le sol avec le talon", "Éviter de se pencher trop en avant"],
+    variantEasy: "Marche rapide sur place",
+    variantHard: "Genoux hauts (high knees) à vitesse maximale",
+    imagePath: "images exercices/Footing sur place.avif"
   },
   "Squats": {
-    desc: "Pieds largeur hanches, fesses vers l'arrière, dos droit. Descends seulement tant que tu contrôles.",
+    desc: "Pieds légèrement plus larges que les hanches. Reculer les fesses comme pour s'asseoir, dos droit. Descendre jusqu'aux cuisses proches de l'horizontale, remonter en poussant dans les talons.",
     tip: "Imagine que tu t'assoies sur une chaise derrière toi. Les genoux suivent la direction des orteils.",
-    muscles: ["Quadriceps", "Fessiers", "Ischio-jambiers"]
+    muscles: ["Quadriceps", "Fessiers", "Ischio-jambiers"],
+    difficulty: 1,
+    errors: ["Genoux qui rentrent vers l'intérieur", "Dos qui se courbe", "Talons qui décollent"],
+    variantEasy: "Squats avec appui sur une chaise",
+    variantHard: "Squat sauté (jump squat)",
+    imagePath: "images exercices/squat.avif"
   },
   "Dips chaise": {
-    desc: "Mains sur une chaise stable, coudes vers l'arrière. Descends et remonte.",
+    desc: "Mains sur le bord d'une chaise stable, fessiers devant la chaise. Fléchir les coudes vers l'arrière, descendre puis repousser. Garder la poitrine ouverte.",
     tip: "Version facile : pieds proches de la chaise. Attention à ne pas hausser les épaules.",
-    muscles: ["Triceps", "Épaules", "Pectoraux"]
+    muscles: ["Triceps", "Épaules", "Pectoraux"],
+    difficulty: 2,
+    errors: ["Épaules qui remontent vers les oreilles", "Coudes qui s'écartent sur les côtés"],
+    variantEasy: "Pieds très proches, peu de descente",
+    variantHard: "Jambes tendues et surélevées",
+    imagePath: "images exercices/dips.avif"
   },
   "Pompes mur": {
-    desc: "Mains contre le mur, corps gainé comme une planche. Plie les coudes pour te rapprocher du mur.",
+    desc: "Mains sur le mur à largeur d'épaules, corps gainé. Plier les bras pour approcher la poitrine du mur, repousser pour revenir.",
     tip: "Plus tes pieds sont loin du mur, plus c'est difficile. Garde le ventre rentré.",
-    muscles: ["Pectoraux", "Triceps", "Épaules"]
+    muscles: ["Pectoraux", "Triceps", "Épaules"],
+    difficulty: 1,
+    errors: ["Bassin qui tombe", "Coudes qui s'écartent à 90°"],
+    variantEasy: "Mains plus hautes sur le mur",
+    variantHard: "Pompes sur une table inclinée",
+    imagePath: "images exercices/Pompes au mur (pec).avif"
   },
   "Pompes genoux": {
-    desc: "Au sol sur les genoux, corps aligné de la tête aux genoux. Descends contrôlé, remonte en soufflant.",
+    desc: "Au sol sur les genoux, corps aligné de la tête aux genoux. Descendre contrôlé, remonter en soufflant.",
     tip: "Pose une serviette sous les genoux si inconfort. Regarde le sol, pas devant toi.",
-    muscles: ["Pectoraux", "Triceps", "Abdos"]
+    muscles: ["Pectoraux", "Triceps", "Abdos"],
+    difficulty: 2,
+    errors: ["Fesses en l'air", "Corps qui n'est pas aligné", "Coudes trop écartés"],
+    variantEasy: "Pompes mur",
+    variantHard: "Pompes au sol sur les orteils",
+    imagePath: "images exercices/Pompes au mur (pec).avif"
   },
   "Pompes sol": {
-    desc: "Corps en planche complète, mains sous les épaules. Garde les abdos serrés tout le mouvement.",
-    tip: "Si les hanches montent ou descendent, reviens aux pompes genoux encore un peu.",
-    muscles: ["Pectoraux", "Triceps", "Abdos", "Épaules"]
+    desc: "Corps en planche complète, mains sous les épaules. Garder les abdos serrés tout le mouvement.",
+    tip: "Si les hanches montent ou descendent, reviens aux pompes genoux.",
+    muscles: ["Pectoraux", "Triceps", "Abdos", "Épaules"],
+    difficulty: 3,
+    errors: ["Hanches trop hautes ou trop basses", "Regard vers l'avant au lieu du sol"],
+    variantEasy: "Pompes genoux",
+    variantHard: "Pompes diamant, pompes déclinées",
+    imagePath: "images exercices/Pompes au sol (pec).avif"
   },
   "Pont fessier": {
-    desc: "Allongé sur le dos, pieds au sol près des fesses, monte le bassin. Serre les fessiers en haut.",
-    tip: "Maintiens 1 à 2 secondes en haut pour mieux activer les fessiers.",
-    muscles: ["Fessiers", "Ischio-jambiers", "Lombaires"]
+    desc: "Allongé sur le dos, pieds à plat près des fesses. Lever le bassin jusqu'à aligner épaules, hanches et genoux. Redescendre lentement.",
+    tip: "Tiens 1 à 2 secondes en haut et serre les fessiers fort.",
+    muscles: ["Fessiers", "Ischio-jambiers", "Lombaires"],
+    difficulty: 1,
+    errors: ["Bassin qui ne monte pas assez", "Genoux qui s'écartent"],
+    variantEasy: "Amplitude réduite",
+    variantHard: "Pont fessier sur une jambe",
+    imagePath: "images exercices/pont fessiers.avif"
   },
   "Chaise": {
-    desc: "Dos au mur, cuisses parallèles au sol, comme assis sur une chaise invisible.",
+    desc: "Dos contre le mur, descendre jusqu'à former un angle proche de 90°. Maintenir la position avec les abdos engagés.",
     tip: "Version facile : descends moins bas. Respire régulièrement, ne retiens pas ton souffle.",
-    muscles: ["Quadriceps", "Fessiers", "Mollets"]
+    muscles: ["Quadriceps", "Fessiers", "Mollets"],
+    difficulty: 2,
+    errors: ["Dos décollé du mur", "Genoux devant les orteils"],
+    variantEasy: "Angle moins profond (120°)",
+    variantHard: "Lever alternativement un talon",
+    imagePath: "images exercices/Chaises.avif"
   },
   "Gainage face": {
-    desc: "Sur les coudes ou les mains, corps en planche. Maintiens la position sans bouger.",
+    desc: "Sur les coudes ou les mains, corps en planche. Contracter les abdominaux. Maintenir sans creuser le dos.",
     tip: "Version facile : genoux au sol. Regarde le sol, contracte les fesses et le ventre.",
-    muscles: ["Abdos", "Lombaires", "Épaules"]
+    muscles: ["Abdos", "Lombaires", "Épaules"],
+    difficulty: 2,
+    errors: ["Dos creusé ou arrondi", "Fesses trop hautes", "Retenir sa respiration"],
+    variantEasy: "Gainage sur les genoux",
+    variantHard: "Gainage avec levé de jambe alterné",
+    imagePath: "images exercices/Gainage de face sur les coudes.avif"
   },
   "Gainage côté": {
-    desc: "Sur un coude, corps aligné de la tête aux pieds, côté droit puis gauche.",
-    tip: "Version facile : genou du bas au sol. Lève légèrement la hanche si tu veux rendre plus dur.",
-    muscles: ["Obliques", "Abdos", "Épaules"]
+    desc: "Appui sur un coude et les genoux ou les pieds. Corps aligné, maintenir la position sans laisser tomber le bassin.",
+    tip: "Version facile : genou du bas au sol. Lève légèrement la hanche si tu veux plus de difficulté.",
+    muscles: ["Obliques", "Abdos", "Épaules"],
+    difficulty: 2,
+    errors: ["Bassin qui s'affaisse", "Épaule qui remonte"],
+    variantEasy: "Genoux au sol",
+    variantHard: "Lever la jambe du dessus",
+    imagePath: "images exercices/Gainage profil sur le coude.avif"
   },
   "Superman": {
-    desc: "Sur le ventre, décolle doucement bras et jambes simultanément. Garde la nuque dans l'axe.",
+    desc: "Allongé sur le ventre, lever simultanément bras et jambes. Garder la tête dans l'alignement du dos. Redescendre lentement.",
     tip: "Tiens 2 secondes en haut. Ne force pas si tu sens une douleur dans le bas du dos.",
-    muscles: ["Lombaires", "Fessiers", "Épaules"]
+    muscles: ["Lombaires", "Fessiers", "Épaules"],
+    difficulty: 1,
+    errors: ["Nuque cassée (tête trop relevée)", "Mouvement trop brusque"],
+    variantEasy: "Lever un bras et la jambe opposée",
+    variantHard: "Tenir 5 secondes en haut",
+    imagePath: "images exercices/Super man.avif"
   },
   "Fentes": {
-    desc: "Un pied devant, descends en gardant le buste droit, remonte. Alterne les jambes.",
+    desc: "Faire un grand pas en avant, descendre en pliant les deux jambes. Garder le buste droit. Revenir à la position de départ.",
     tip: "Version facile : petite amplitude ou appui à un mur pour l'équilibre.",
-    muscles: ["Quadriceps", "Fessiers", "Ischio-jambiers"]
+    muscles: ["Quadriceps", "Fessiers", "Ischio-jambiers"],
+    difficulty: 2,
+    errors: ["Genou avant qui dépasse les orteils", "Buste penché en avant"],
+    variantEasy: "Fentes statiques avec appui",
+    variantHard: "Fentes marchées ou sautées",
+    imagePath: "images exercices/Fentes.avif"
   },
   "Jumping jack": {
-    desc: "Ouvre et ferme bras et jambes en même temps. Atterrissage amorti, genoux légèrement fléchis.",
-    tip: "Version facile : sans saut, un pied après l'autre. Idéal pour s'échauffer.",
-    muscles: ["Cardio", "Épaules", "Jambes"]
+    desc: "Sauter en écartant jambes et bras simultanément. Revenir en position initiale. Maintenir un rythme régulier.",
+    tip: "Version facile : sans saut, un pied après l'autre. Atterrissage amorti, genoux fléchis.",
+    muscles: ["Cardio", "Épaules", "Jambes"],
+    difficulty: 1,
+    errors: ["Atterrissage rigide sur les talons", "Bras qui ne montent pas assez"],
+    variantEasy: "Version sans saut (step jack)",
+    variantHard: "Jumping jack avec squat",
+    imagePath: "images exercices/1- Jumping jack.avif"
   },
   "Mountain climbers": {
-    desc: "En position de planche, ramène les genoux vers la poitrine en alternance.",
+    desc: "Position de planche, ramener alternativement les genoux vers la poitrine. Garder le bassin stable.",
     tip: "Version facile : lentement, mains sur une table surélevée. Garde les hanches basses.",
-    muscles: ["Abdos", "Cardio", "Épaules"]
+    muscles: ["Abdos", "Cardio", "Épaules"],
+    difficulty: 3,
+    errors: ["Bassin qui monte et descend", "Épaules qui reculent"],
+    variantEasy: "Version lente sur table",
+    variantHard: "Version rapide (sprint)",
+    imagePath: "images exercices/Mountain climbers.avif"
   },
   "Étirements": {
-    desc: "Respiration lente et profonde. Psoas, dos, ischios, mollets, quadriceps. Ne force jamais.",
+    desc: "Respiration lente et profonde. Psoas, dos, ischios, mollets, quadriceps. Ne jamais forcer.",
     tip: "Tiens chaque étirement 30 à 60 secondes. C'est une séance à part entière, pas une option !",
-    muscles: ["Mobilité", "Récupération"]
+    muscles: ["Mobilité", "Récupération"],
+    difficulty: 1,
+    errors: ["Forcer sur une douleur", "Étirer à froid"],
+    variantEasy: "Étirements allongés au sol",
+    variantHard: "Yoga dynamique",
+    imagePath: ""
   }
 };
 
@@ -669,7 +749,7 @@ function showPage(id) {
 
   if (id === 'home') renderHome();
   if (id === 'calendar') renderCalendar();
-  if (id === 'timer') renderTimer();
+  if (id === 'dashboard') renderDashboard();
   if (id === 'library') renderLibrary();
   if (id === 'settings') renderSettings();
 }
@@ -706,6 +786,8 @@ function renderHome() {
       const setsMatch = e.match(/(\d+)\s*x/);
       const targetSets = setsMatch ? parseInt(setsMatch[1]) : 3;
 
+      const exName = e.split(' — ')[0].trim();
+
       const goBtn = secs
         ? `<button class="exercise-start-btn" onclick="startInlineTimer(${i}, ${secs})">⏱ ${secs}s</button>`
         : `<button class="exercise-start-btn" onclick="startInlineTimer(${i}, 0)">▶ Go</button>`;
@@ -715,10 +797,15 @@ function renderHome() {
            <button class="inline-btn inline-btn-reset" onclick="resetInlineTimer(${i})">↺</button>`
         : ``;
 
+      const infoBtn = EXERCISES[exName]
+        ? `<button class="exercise-info-btn" onclick="openExerciseModal('${exName.replace(/'/g, "\\'")}')">ℹ️</button>`
+        : '';
+
       return `
         <div class="exercise-item">
           <div class="exercise-item-top">
             <span class="exercise-item-label">${e}</span>
+            ${infoBtn}
             ${goBtn}
           </div>
           <div class="exercise-inline-timer" id="inline-timer-${i}" data-sets="${targetSets}">
@@ -994,11 +1081,12 @@ function showToast(msg) {
 // ─── Sélection de profil ─────────────────────────────────────
 function selectProfile(user) {
   currentUser = user;
-  localStorage.setItem('lastUser', user);
+  // Ne pas mémoriser le profil invité pour ne pas bloquer Quentin/Sophie au prochain lancement
+  if (user !== 'invite') localStorage.setItem('lastUser', user);
   document.getElementById('profileScreen').classList.add('hidden');
   document.getElementById('app').classList.remove('hidden');
-  document.getElementById('topbarProfileName').textContent =
-    user.charAt(0).toUpperCase() + user.slice(1);
+  const displayName = user === 'invite' ? 'Invité' : user.charAt(0).toUpperCase() + user.slice(1);
+  document.getElementById('topbarProfileName').textContent = displayName;
 
   // Demander permission notif après la première interaction
   const sessions = countDoneSessions();
@@ -1065,6 +1153,217 @@ function installApp() {
     deferredInstallPrompt = null;
     document.getElementById('installBanner').classList.add('hidden');
   });
+}
+
+// ─── Modale exercice ──────────────────────────────────────────
+function openExerciseModal(name) {
+  const ex = EXERCISES[name];
+  if (!ex) return;
+  const stars = '★'.repeat(ex.difficulty || 1) + '☆'.repeat(3 - (ex.difficulty || 1));
+  const modal = document.getElementById('exerciseModal');
+  document.getElementById('modalExName').textContent = name;
+  document.getElementById('modalExImg').src = ex.imagePath || '';
+  document.getElementById('modalExImg').alt = name;
+  document.getElementById('modalExDesc').textContent = ex.desc;
+  document.getElementById('modalExDiff').textContent = stars;
+  document.getElementById('modalExMuscles').innerHTML =
+    (ex.muscles || []).map(m => `<span class="muscle-tag">${m}</span>`).join('');
+  document.getElementById('modalExErrors').innerHTML =
+    (ex.errors || []).map(err => `<li>${err}</li>`).join('');
+  document.getElementById('modalExEasy').textContent = ex.variantEasy || '—';
+  document.getElementById('modalExHard').textContent = ex.variantHard || '—';
+  modal.classList.remove('hidden');
+}
+
+function closeExerciseModal() {
+  document.getElementById('exerciseModal').classList.add('hidden');
+}
+
+// ─── Dashboard / Tableau de bord ──────────────────────────────
+function saveWeight(date, poids, taille, note) {
+  const history = load('weightHistory', []);
+  history.push({ date, poids: parseFloat(poids), taille: parseFloat(taille) || null, note: note || '' });
+  history.sort((a, b) => a.date.localeCompare(b.date));
+  store('weightHistory', history);
+}
+
+function drawWeightChart(canvasId, data, label, color) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width;
+  const H = canvas.height;
+  const pad = { top: 20, right: 16, bottom: 28, left: 40 };
+
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, W, H);
+
+  if (!data || data.length === 0) {
+    ctx.fillStyle = '#aaa';
+    ctx.font = '13px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Aucune donnée', W / 2, H / 2);
+    return;
+  }
+
+  const values = data.map(d => d.val).filter(v => v != null && !isNaN(v));
+  if (values.length === 0) return;
+
+  const minVal = Math.min(...values);
+  const maxVal = Math.max(...values);
+  const range = maxVal - minVal || 1;
+
+  const toX = (i) => pad.left + (i / (data.length - 1 || 1)) * (W - pad.left - pad.right);
+  const toY = (v) => pad.top + (1 - (v - minVal) / range) * (H - pad.top - pad.bottom);
+
+  // Axes
+  ctx.strokeStyle = '#ddd';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(pad.left, pad.top);
+  ctx.lineTo(pad.left, H - pad.bottom);
+  ctx.lineTo(W - pad.right, H - pad.bottom);
+  ctx.stroke();
+
+  // Y labels
+  ctx.fillStyle = '#888';
+  ctx.font = '10px sans-serif';
+  ctx.textAlign = 'right';
+  [0, 0.5, 1].forEach(t => {
+    const v = minVal + t * range;
+    const y = toY(v);
+    ctx.fillText(v.toFixed(1), pad.left - 4, y + 4);
+    ctx.strokeStyle = '#f0f0f0';
+    ctx.beginPath();
+    ctx.moveTo(pad.left, y);
+    ctx.lineTo(W - pad.right, y);
+    ctx.stroke();
+  });
+
+  // Ligne
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2.5;
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+  data.forEach((d, i) => {
+    if (d.val == null) return;
+    const x = toX(i); const y = toY(d.val);
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+
+  // Points
+  ctx.fillStyle = color;
+  data.forEach((d, i) => {
+    if (d.val == null) return;
+    ctx.beginPath();
+    ctx.arc(toX(i), toY(d.val), 4, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  // X labels (dates)
+  ctx.fillStyle = '#aaa';
+  ctx.font = '9px sans-serif';
+  ctx.textAlign = 'center';
+  const step = Math.max(1, Math.ceil(data.length / 5));
+  data.forEach((d, i) => {
+    if (i % step === 0 || i === data.length - 1) {
+      ctx.fillText(d.label, toX(i), H - pad.bottom + 14);
+    }
+  });
+}
+
+function renderDashboard() {
+  const rpg = getRPGInfo();
+  const sessions = countDoneSessions();
+  const streak = getStreak();
+  const bestStreak = getBestStreak();
+  const history = load('weightHistory', []);
+
+  const weightData = history.filter(h => h.poids).map(h => ({
+    val: h.poids,
+    label: h.date.slice(5) // MM-DD
+  }));
+  const tailleData = history.filter(h => h.taille).map(h => ({
+    val: h.taille,
+    label: h.date.slice(5)
+  }));
+
+  document.getElementById('dashContent').innerHTML = `
+    <div class="card">
+      <div class="card-title">Statistiques</div>
+      <div class="stat-row"><span class="stat-label">Séances totales</span><span class="stat-value">${sessions}</span></div>
+      <div class="stat-row"><span class="stat-label">Série actuelle</span><span class="stat-value">${streak} j</span></div>
+      <div class="stat-row"><span class="stat-label">Meilleure série</span><span class="stat-value">${bestStreak} j</span></div>
+      <div class="stat-row"><span class="stat-label">XP total</span><span class="stat-value">${rpg.xp} XP</span></div>
+      <div class="stat-row"><span class="stat-label">Niveau RPG</span><span class="stat-value">${rpg.name}</span></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Ajouter une mesure</div>
+      <div class="settings-group">
+        <div class="settings-label">Date</div>
+        <input type="date" id="inputWeightDate" class="settings-field" value="${new Date().toISOString().slice(0,10)}" />
+      </div>
+      <div class="settings-group">
+        <div class="settings-label">Poids (kg)</div>
+        <input type="number" id="inputWeightVal" class="settings-field" step="0.1" min="30" max="300" placeholder="ex: 72.5" />
+      </div>
+      <div class="settings-group">
+        <div class="settings-label">Tour de taille (cm)</div>
+        <input type="number" id="inputTailleVal" class="settings-field" step="0.5" min="40" max="200" placeholder="ex: 85.0" />
+      </div>
+      <div class="settings-group">
+        <div class="settings-label">Note (optionnel)</div>
+        <input type="text" id="inputWeightNote" class="settings-field" placeholder="ex: Après le repas" />
+      </div>
+      <button class="btn btn-primary mt-8" onclick="handleSaveMeasure()">Ajouter mesure</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Évolution du poids (kg)</div>
+      ${weightData.length > 0
+        ? `<canvas id="weightChart" width="320" height="160" style="width:100%;height:160px;border-radius:8px;"></canvas>`
+        : `<div class="text-muted" style="text-align:center;padding:20px 0;">Aucune donnée de poids enregistrée.</div>`}
+    </div>
+
+    <div class="card">
+      <div class="card-title">Évolution du tour de taille (cm)</div>
+      ${tailleData.length > 0
+        ? `<canvas id="tailleChart" width="320" height="160" style="width:100%;height:160px;border-radius:8px;"></canvas>`
+        : `<div class="text-muted" style="text-align:center;padding:20px 0;">Aucune donnée de tour de taille enregistrée.</div>`}
+    </div>
+
+    ${history.length > 0 ? `
+    <div class="card">
+      <div class="card-title">Historique</div>
+      ${history.slice().reverse().slice(0, 10).map(h => `
+        <div class="stat-row">
+          <span class="stat-label">${h.date}${h.note ? ' — ' + h.note : ''}</span>
+          <span class="stat-value">${h.poids ? h.poids + ' kg' : ''}${h.poids && h.taille ? ' / ' : ''}${h.taille ? h.taille + ' cm' : ''}</span>
+        </div>
+      `).join('')}
+    </div>` : ''}
+  `;
+
+  // Dessiner les graphiques après rendu DOM
+  requestAnimationFrame(() => {
+    if (weightData.length > 0) drawWeightChart('weightChart', weightData, 'poids', '#d71920');
+    if (tailleData.length > 0) drawWeightChart('tailleChart', tailleData, 'tour de taille', '#2563eb');
+  });
+}
+
+function handleSaveMeasure() {
+  const date = document.getElementById('inputWeightDate').value;
+  const poids = document.getElementById('inputWeightVal').value;
+  const taille = document.getElementById('inputTailleVal').value;
+  const note = document.getElementById('inputWeightNote').value;
+  if (!date) { showToast('Indique une date.'); return; }
+  if (!poids && !taille) { showToast('Indique au moins une mesure.'); return; }
+  saveWeight(date, poids || null, taille || null, note);
+  showToast('Mesure enregistrée !');
+  renderDashboard();
 }
 
 // ─── Init ─────────────────────────────────────────────────────

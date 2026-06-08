@@ -28,6 +28,12 @@
       <div class="profile-name">Sophie</div>
     </button>
   </div>
+  <div class="guest-separator">— ou —</div>
+  <button class="profile-btn profile-btn-guest" onclick="selectProfile('invite')">
+    <div class="profile-avatar guest">👤</div>
+    <div class="profile-name">Invité</div>
+    <div class="guest-note">Pour tester l'app — tes données restent sur ce téléphone</div>
+  </button>
 </div>
 
 <!-- ===== Application principale ===== -->
@@ -151,45 +157,11 @@
 
   </div><!-- /page-home -->
 
-  <!-- ── Page Timer ── -->
-  <div id="page-timer" class="page">
-    <div class="section-title">⏱ Timer séance</div>
-
-    <div class="card">
-      <div class="card-title">Durée</div>
-      <div class="timer-presets">
-        <button class="preset-btn active-preset" data-secs="30" onclick="setTimerDuration(30)">30s</button>
-        <button class="preset-btn" data-secs="45" onclick="setTimerDuration(45)">45s</button>
-        <button class="preset-btn" data-secs="60" onclick="setTimerDuration(60)">1 min</button>
-        <button class="preset-btn" data-secs="90" onclick="setTimerDuration(90)">1min30</button>
-      </div>
-      <div class="timer-display" id="timerDisplay">00:30</div>
-      <div class="timer-controls">
-        <button class="btn btn-primary" onclick="startTimer()">▶ Démarrer</button>
-        <button class="btn btn-secondary" onclick="pauseTimer()">⏸ Pause</button>
-      </div>
-      <button class="btn btn-secondary mt-8" onclick="resetTimer()">↺ Reset</button>
-    </div>
-
-    <div class="card">
-      <div class="card-title">Durée personnalisée</div>
-      <div style="display:flex;gap:8px;align-items:center;">
-        <input type="number" id="customTimerInput" min="5" max="600" value="60"
-          class="settings-field" style="flex:1;" />
-        <button class="btn btn-secondary" style="width:auto;padding:14px 16px;"
-          onclick="setTimerDuration(parseInt(document.getElementById('customTimerInput').value)||60)">
-          OK
-        </button>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">À savoir</div>
-      <div class="text-muted" style="font-size:0.9rem;line-height:1.6;">
-        Le timer vibre et émet un bip à la fin. Utilise-le pour mesurer tes temps de gainage, de repos, ou tes séries.
-      </div>
-    </div>
-  </div><!-- /page-timer -->
+  <!-- ── Page Dashboard ── -->
+  <div id="page-dashboard" class="page">
+    <div class="section-title">📊 Tableau de bord</div>
+    <div id="dashContent"></div>
+  </div><!-- /page-dashboard -->
 
   <!-- ── Page Calendrier ── -->
   <div id="page-calendar" class="page">
@@ -300,9 +272,9 @@
       <span class="nav-icon">🏠</span>
       <span>Accueil</span>
     </button>
-    <button class="nav-btn" id="nav-timer" onclick="showPage('timer')">
-      <span class="nav-icon">⏱</span>
-      <span>Timer</span>
+    <button class="nav-btn" id="nav-dashboard" onclick="showPage('dashboard')">
+      <span class="nav-icon">📊</span>
+      <span>Stats</span>
     </button>
     <button class="nav-btn" id="nav-calendar" onclick="showPage('calendar')">
       <span class="nav-icon">📅</span>
@@ -317,6 +289,32 @@
       <span>Réglages</span>
     </button>
   </nav>
+
+  <!-- ── Modale exercice ── -->
+  <div id="exerciseModal" class="exercise-modal-overlay hidden" onclick="if(event.target===this)closeExerciseModal()">
+    <div class="exercise-modal-content">
+      <button class="exercise-modal-close" onclick="closeExerciseModal()">✕</button>
+      <img id="modalExImg" src="" alt="" class="exercise-modal-img" onerror="this.style.display='none'" />
+      <div class="exercise-modal-name" id="modalExName"></div>
+      <div class="exercise-modal-diff" id="modalExDiff"></div>
+      <div class="exercise-muscles" id="modalExMuscles"></div>
+      <div class="card-title mt-16">Description</div>
+      <p class="exercise-desc" id="modalExDesc"></p>
+      <div class="card-title mt-16">Erreurs fréquentes</div>
+      <ul class="exercise-modal-errors" id="modalExErrors"></ul>
+      <div class="card-title mt-16">Variantes</div>
+      <div class="exercise-modal-variants">
+        <div class="exercise-modal-variant easy">
+          <span class="variant-label">Plus facile</span>
+          <span id="modalExEasy"></span>
+        </div>
+        <div class="exercise-modal-variant hard">
+          <span class="variant-label">Plus difficile</span>
+          <span id="modalExHard"></span>
+        </div>
+      </div>
+    </div>
+  </div>
 
 </div><!-- /app -->
 
