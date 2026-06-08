@@ -1348,7 +1348,9 @@ function renderCalendar() {
     if (isBeforeStart) {
       cls += ' empty';
     } else if (isFuture) {
-      cls += ' future';
+      const w = workout(diffDays);
+      cls += w.isRest ? ' rest future' : ' future';
+      title = w.isRest ? 'Repos' : w.title;
     } else if (isToday) {
       const w = workout(diffDays);
       cls += w.isRest ? ' rest' : (isDone(diffDays) ? ' done' : '');
@@ -1368,9 +1370,9 @@ function renderCalendar() {
       }
     }
 
-    // Feature 3: afficher label workout/repos dans la cellule
+    // Afficher label workout/repos dans la cellule (passé, aujourd'hui, et futur)
     let cellLabel = '';
-    if (title && !isBeforeStart && !isFuture) {
+    if (title && !isBeforeStart) {
       const shortTitle = title === 'Repos' ? 'Repos' : title.split(' — ')[0].split(' / ')[0].slice(0, 10);
       cellLabel = `<div class="cal-cell-label">${shortTitle}</div>`;
     }
