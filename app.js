@@ -187,22 +187,26 @@ function workout(day, diffOffset = 0) {
   const d = ((day - 1) % 7) + 1;
   const hard = c - 1;
   const rest = Math.max(30, 60 - (c - 1) * 5);
-  let reps = 15 + Math.min(15, hard * 3) + diffOffset * 5;
-  reps = Math.max(8, reps);
-  let plank = 30 + Math.min(45, hard * 5) + diffOffset * 5;
-  plank = Math.max(20, plank);
-  const title = baseWeek(day);
 
+  // Durée par série : commence à 30s, +5s par cycle, +5s par cran de difficulté
+  let t = 30 + Math.min(30, hard * 5) + diffOffset * 5;
+  t = Math.max(20, Math.min(t, 90));
+
+  // Gainage/chaise : durée de maintien (un peu moins longue)
+  let plank = 25 + Math.min(35, hard * 5) + diffOffset * 5;
+  plank = Math.max(20, Math.min(plank, 75));
+
+  const title = baseWeek(day);
   let list = [];
 
   if (day <= 14) {
-    if (d === 1) list = [`Montées de genoux — 3 x 20`, `Squats — 3 x 15`, `Dips chaise — 3 x 10 à 15`, `Pompes mur — 3 x 15`];
-    if (d === 2) list = [`Footing sur place — 3 x 1 min`, `Squats — 3 x 15`, `Pont fessier — 3 x 15`, `Chaise — 3 x 30s`];
-    if (d === 3) list = [`Montées de genoux — 3 x 20`, `Pompes mur — 3 x 15`, `Dips chaise — 3 x 10 à 15`, `Pompes genoux — 3 x 8 à 12`];
+    if (d === 1) list = [`Montées de genoux — 3 x 30s`, `Squats — 3 x 30s`, `Dips chaise — 3 x 25s`, `Pompes mur — 3 x 25s`];
+    if (d === 2) list = [`Footing sur place — 3 x 45s`, `Squats — 3 x 30s`, `Pont fessier — 3 x 30s`, `Chaise — 3 x 30s`];
+    if (d === 3) list = [`Montées de genoux — 3 x 30s`, `Pompes mur — 3 x 25s`, `Dips chaise — 3 x 25s`, `Pompes genoux — 3 x 25s`];
     if (d === 4) list = [`Étirements — 10 à 15 min`];
-    if (d === 5) list = [`Montées de genoux — 3 x 20`, `Squats — 3 x 15`, `Gainage côté — 2 x 30s par côté`, `Superman — 3 x 15`];
-    if (d === 6) list = [`Montées de genoux — 3 x 20`, `Squats — 3 x 15`, `Pont fessier — 3 x 15`, `Fentes — 2 x 30s par jambe`];
-    if (d === 7) list = [`Footing sur place — 3 x 1 min`, `Pompes mur — 3 x 15`, `Gainage face — 3 x 30s`, `Dips chaise — 3 x 10 à 15`];
+    if (d === 5) list = [`Montées de genoux — 3 x 30s`, `Squats — 3 x 30s`, `Gainage côté — 2 x 25s par côté`, `Superman — 3 x 25s`];
+    if (d === 6) list = [`Montées de genoux — 3 x 30s`, `Squats — 3 x 30s`, `Pont fessier — 3 x 30s`, `Fentes — 2 x 30s par jambe`];
+    if (d === 7) list = [`Footing sur place — 3 x 45s`, `Pompes mur — 3 x 25s`, `Gainage face — 3 x 25s`, `Dips chaise — 3 x 25s`];
     return { title, list, note: "Récupération : 1 min entre exercices, 30s entre séries.", isRest: d === 4 };
   }
 
@@ -222,14 +226,17 @@ function workout(day, diffOffset = 0) {
   rounds += Math.max(0, c - 1) + diffOffset;
   rounds = Math.max(1, Math.min(rounds, 6));
 
-  list = circuit[d].map(x =>
-    `${x} — ${(x.includes('Gainage') || x === 'Chaise') ? plank + 's' : reps + ' reps'}`
-  );
+  // Tous les exercices sont maintenant basés sur le temps
+  list = circuit[d].map(x => {
+    const isStatic = x.includes('Gainage') || x === 'Chaise';
+    const dur = isStatic ? plank : t;
+    return `${x} — ${dur}s`;
+  });
 
   return {
     title: `${title} — circuit ${rounds} tour${rounds > 1 ? 's' : ''}`,
     list,
-    note: `Repos : ${rest}s entre exercices, 1 à 2 min entre les tours.`,
+    note: `${t}s d'effort, ${rest}s de repos entre exercices.`,
     isRest: false
   };
 }
@@ -797,19 +804,15 @@ function renderHome() {
 
       const exName = e.split(' — ')[0].trim();
 
-      const goBtn = secs
-        ? `<button class="exercise-start-btn" onclick="startInlineTimer(${i}, ${secs})">⏱ ${secs}s</button>`
-        : `<button class="exercise-start-btn" onclick="startInlineTimer(${i}, 60)">▶ Go</button>`;
+      // Tous les exercices ont maintenant une durée — fallback 30s si non détecté
+      const duration = secs || 30;
+      const goBtn = `<button class="exercise-start-btn" onclick="startInlineTimer(${i}, ${duration})">⏱ ${duration}s</button>`;
 
-      // Toujours afficher les contrôles timer ; pour les reps, le timer sert de chrono de repos
-      const timerLabel = secs ? '' : '<span style="font-size:0.7rem;color:#888;margin-left:4px;">repos</span>';
       const timerControls = `
         <button class="inline-btn inline-btn-start" onclick="toggleInlineTimer(${i})">▶</button>
         <button class="inline-btn inline-btn-reset" onclick="resetInlineTimer(${i})">↺</button>`;
 
-      const defaultDisplay = secs
-        ? (String(Math.floor(secs/60)).padStart(2,'0')+':'+String(secs%60).padStart(2,'0'))
-        : '01:00';
+      const defaultDisplay = String(Math.floor(duration/60)).padStart(2,'0') + ':' + String(duration%60).padStart(2,'0');
 
       const infoBtn = EXERCISES[exName]
         ? `<button class="exercise-info-btn" onclick="openExerciseModal('${exName.replace(/'/g, "\\'")}')">ℹ️</button>`
@@ -825,10 +828,7 @@ function renderHome() {
           <div class="exercise-inline-timer" id="inline-timer-${i}" data-sets="${targetSets}">
             <div style="display:flex;flex-direction:column;gap:8px;width:100%;">
               <div style="display:flex;align-items:center;gap:10px;">
-                <div style="display:flex;align-items:baseline;gap:2px;">
-                  <div class="inline-timer-display" id="inline-display-${i}">${defaultDisplay}</div>
-                  ${timerLabel}
-                </div>
+                <div class="inline-timer-display" id="inline-display-${i}">${defaultDisplay}</div>
                 <div class="inline-timer-controls" style="gap:6px;">
                   ${timerControls}
                 </div>
