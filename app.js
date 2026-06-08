@@ -1769,3 +1769,7 @@ function init() {
 }
 
 document.addEventListener('DOMContentLoaded', init);
+
+// Exposer pour debug console
+window.syncToCloud = syncToCloud;
+window.syncFromCloud = syncFromCloud;
