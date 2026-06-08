@@ -734,7 +734,16 @@ function checkAllSeriesDone() {
     </div>
   `;
 
+  // Sauvegarder automatiquement dès que toutes les séries sont faites
+  markDone(dayNumber(), selectedFeedback);
+  updateDifficultyFromFeedback(selectedFeedback);
+  if (countDoneSessions() === 1) requestNotificationPermission();
+
   seanceFinieEl.classList.remove('hidden');
+  // Masquer le bouton manuel (séance déjà sauvegardée)
+  const doneBtn = document.getElementById('markDoneBtn');
+  if (doneBtn) doneBtn.classList.add('hidden');
+
   setTimeout(() => seanceFinieEl.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
   releaseWakeLock();
   if (navigator.vibrate) navigator.vibrate([100, 50, 100, 50, 300]);
@@ -845,7 +854,8 @@ function renderHome() {
     document.getElementById('encouragementMsg').classList.remove('hidden');
     document.getElementById('encouragementMsg').textContent = randomEncouragement();
   } else {
-    doneBtn.classList.add('hidden'); // remplacé par le bouton dans seanceFinie
+    // Bouton toujours visible pour sauvegarder même sans passer par les séries
+    doneBtn.classList.remove('hidden');
     feedbackSection.classList.remove('hidden');
     seanceFinie.classList.add('hidden');
     document.getElementById('encouragementMsg').classList.add('hidden');
@@ -1093,6 +1103,11 @@ function selectProfile(user) {
   document.getElementById('app').classList.remove('hidden');
   const displayName = user === 'invite' ? 'Invité' : user.charAt(0).toUpperCase() + user.slice(1);
   document.getElementById('topbarProfileName').textContent = displayName;
+
+  // Sauvegarder automatiquement la date de départ si c'est la première utilisation
+  if (!load('startDate')) {
+    store('startDate', new Date().toISOString().slice(0, 10));
+  }
 
   // Demander permission notif après la première interaction
   const sessions = countDoneSessions();
