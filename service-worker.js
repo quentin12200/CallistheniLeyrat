@@ -1,4 +1,4 @@
-const CACHE_NAME = 'callistheni-v1';
+const CACHE_NAME = 'callistheni-v3';
 const ASSETS = [
   '/',
   '/index.html',
@@ -6,7 +6,21 @@ const ASSETS = [
   '/app.js',
   '/manifest.json',
   '/icons/icon-192.png',
-  '/icons/icon-512.png'
+  '/icons/icon-512.png',
+  '/images exercices/Montées de genoux sans sauter.avif',
+  '/images exercices/Footing sur place.avif',
+  '/images exercices/squat.avif',
+  '/images exercices/dips.avif',
+  '/images exercices/Pompes au mur (pec).avif',
+  '/images exercices/Pompes au sol (pec).avif',
+  '/images exercices/pont fessiers.avif',
+  '/images exercices/Chaises.avif',
+  '/images exercices/Gainage de face sur les coudes.avif',
+  '/images exercices/Gainage profil sur le coude.avif',
+  '/images exercices/Super man.avif',
+  '/images exercices/Fentes.avif',
+  '/images exercices/1- Jumping jack.avif',
+  '/images exercices/Mountain climbers.avif'
 ];
 
 self.addEventListener('install', e => {
@@ -27,7 +41,7 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   e.respondWith(
-    caches.match(e.request).then(cached => cached || fetch(e.request))
+    caches.match(e.request).then(cached => cached || fetch(e.request).catch(() => new Response('', { status: 404 })))
   );
 });
 
