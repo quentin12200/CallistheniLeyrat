@@ -581,6 +581,7 @@ function markDone(day, feedback = 'ok') {
   awardXP(day);
   checkBadges();
   saveStreak();
+  syncToCloud();
 }
 
 // ─── Système RPG ─────────────────────────────────────────────
@@ -1354,6 +1355,7 @@ function saveSettings() {
   scheduleNotifications();
   showToast('Réglages enregistrés ✓');
   renderHome();
+  syncToCloud();
 }
 
 // ─── Notifications ────────────────────────────────────────────
@@ -1475,6 +1477,8 @@ function selectProfile(user) {
   showPage('home');
   // Garder l'écran allumé si la séance du jour n'est pas encore faite
   if (!isDone(dayNumber())) requestWakeLock();
+  // Sync depuis le cloud (background — ne bloque pas l'affichage)
+  syncFromCloud();
 }
 
 function switchProfile() {
@@ -1759,7 +1763,8 @@ function init() {
   // Reprendre le dernier profil si disponible
   const last = localStorage.getItem('lastUser');
   if (last === 'quentin' || last === 'sophie') {
-    selectProfile(last);
+    // startProfileLogin vérifie si le PIN est déjà mémorisé sur cet appareil
+    startProfileLogin(last);
   }
 }
 

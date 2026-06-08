@@ -36,6 +36,7 @@ function corsHeaders() {
 }
 
 function checkPin(user, pin) {
+  if (!user || !pin) return false;
   const envKey = 'PIN_' + user.toUpperCase();
   const expected = process.env[envKey];
   if (!expected) return false;
@@ -77,7 +78,8 @@ module.exports = async function handler(req, res) {
       });
 
       if (result.rows.length === 0) {
-        return res.status(200).json({ ok: true, data: null, updated_at: null });
+        // Valid PIN but no data stored yet — return empty profile
+        return res.status(200).json({ ok: true, data: {}, updated_at: null });
       }
 
       const row = result.rows[0];
