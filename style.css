@@ -1067,3 +1067,100 @@ html, body {
   opacity: 1;
   color: var(--warn);
 }
+
+/* ===== Feature 4 : Minuteur global de séance ===== */
+.session-timer {
+  background: #1a1a2e;
+  color: #e0e0ff;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 5px 14px;
+  text-align: center;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid #2a2a4e;
+  position: sticky;
+  top: 55px;
+  z-index: 99;
+}
+
+/* ===== Feature 2 : Aperçu demain ===== */
+.tomorrow-card {
+  opacity: 0.78;
+  border-color: #c8c8d4;
+}
+
+.tomorrow-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--txt2);
+  margin-bottom: 8px;
+}
+
+.tomorrow-exercises {
+  font-size: 0.82rem;
+  color: var(--txt2);
+  line-height: 1.6;
+}
+
+.tomorrow-rest {
+  font-size: 0.9rem;
+  color: #1e40af;
+  font-weight: 700;
+  margin-top: 6px;
+}
+
+/* ===== Feature 3 : Carte repos ===== */
+.rest-day-card {
+  text-align: center;
+  padding: 20px 12px;
+}
+
+.rest-day-emoji {
+  font-size: 3rem;
+  margin-bottom: 8px;
+}
+
+.rest-day-title {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #1e40af;
+  margin-bottom: 6px;
+}
+
+.rest-day-msg {
+  font-size: 0.9rem;
+  color: var(--txt2);
+  line-height: 1.5;
+}
+
+/* ===== Feature 3 : Calendrier labels ===== */
+.cal-cell {
+  flex-direction: column;
+  gap: 1px;
+  padding: 2px;
+}
+
+.cal-cell-label {
+  font-size: 0.52rem;
+  font-weight: 600;
+  color: inherit;
+  opacity: 0.8;
+  line-height: 1.1;
+  text-align: center;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ===== Feature 1 : Graphique progression ===== */
+.progression-week-labels {
+  display: flex;
+  justify-content: space-around;
+  padding: 4px 0 0;
+  font-size: 0.75rem;
+  color: var(--txt2);
+  font-weight: 700;
+}
+
