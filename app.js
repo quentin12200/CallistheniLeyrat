@@ -451,6 +451,75 @@ function playBeep() {
   } catch (e) { /* silencieux si le contexte audio échoue */ }
 }
 
+// ─── Mini-timers inline (un par exercice) ────────────────────
+const inlineTimers = {}; // { index: { remaining, initial, interval, running } }
+
+function startInlineTimer(idx, secs) {
+  const timerEl = document.getElementById('inline-timer-' + idx);
+  timerEl.classList.add('visible');
+
+  if (!inlineTimers[idx]) {
+    const initial = secs > 0 ? secs : 30;
+    inlineTimers[idx] = { remaining: initial, initial, interval: null, running: false };
+  }
+  renderInlineTimer(idx);
+  timerEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function renderInlineTimer(idx) {
+  const t = inlineTimers[idx];
+  if (!t) return;
+  const m = Math.floor(t.remaining / 60);
+  const s = t.remaining % 60;
+  const el = document.getElementById('inline-display-' + idx);
+  if (!el) return;
+  el.textContent = String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+  el.className = 'inline-timer-display' + (t.running ? ' running' : (t.remaining === 0 ? ' finished' : ''));
+}
+
+function toggleInlineTimer(idx) {
+  const t = inlineTimers[idx];
+  if (!t) return;
+  const startBtn = document.querySelector(`#inline-timer-${idx} .inline-btn-start`);
+  if (t.running) {
+    clearInterval(t.interval);
+    t.interval = null;
+    t.running = false;
+    if (startBtn) startBtn.textContent = '▶';
+    renderInlineTimer(idx);
+  } else {
+    if (t.remaining === 0) { t.remaining = t.initial; }
+    t.running = true;
+    if (startBtn) startBtn.textContent = '⏸';
+    t.interval = setInterval(() => {
+      if (t.remaining > 0) {
+        t.remaining--;
+        renderInlineTimer(idx);
+      } else {
+        clearInterval(t.interval);
+        t.interval = null;
+        t.running = false;
+        if (startBtn) startBtn.textContent = '▶';
+        renderInlineTimer(idx);
+        if (navigator.vibrate) navigator.vibrate([200, 80, 200, 80, 400]);
+        playBeep();
+      }
+    }, 1000);
+  }
+}
+
+function resetInlineTimer(idx) {
+  const t = inlineTimers[idx];
+  if (!t) return;
+  clearInterval(t.interval);
+  t.interval = null;
+  t.running = false;
+  t.remaining = t.initial;
+  const startBtn = document.querySelector(`#inline-timer-${idx} .inline-btn-start`);
+  if (startBtn) startBtn.textContent = '▶';
+  renderInlineTimer(idx);
+}
+
 // ─── Navigation ───────────────────────────────────────────────
 function showPage(id) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -467,6 +536,9 @@ function showPage(id) {
 
 // ─── Rendu — Page d'accueil ───────────────────────────────────
 function renderHome() {
+  // Nettoyer les timers inline actifs de la session précédente
+  Object.values(inlineTimers).forEach(t => clearInterval(t?.interval));
+  for (const k in inlineTimers) delete inlineTimers[k];
   const today = dayNumber();
   const w = workout(today, getDiffOffset());
   const rpg = getRPGInfo();
@@ -482,7 +554,35 @@ function renderHome() {
   // Séance du jour
   document.getElementById('workoutTitle').textContent = w.title;
   document.getElementById('workoutExercises').innerHTML = w.list
-    .map(e => `<div class="exercise-item">${e}</div>`).join('');
+    .map((e, i) => {
+      // Détecte si c'est un exercice chronométré (gainage, chaise, etc.)
+      const secMatch = e.match(/(\d+)s/);
+      const minMatch = e.match(/(\d+)\s*min/);
+      let secs = null;
+      if (secMatch) secs = parseInt(secMatch[1]);
+      else if (minMatch) secs = parseInt(minMatch[1]) * 60;
+
+      const timerBtn = secs
+        ? `<button class="exercise-start-btn" onclick="startInlineTimer(${i}, ${secs})">⏱ ${secs}s</button>`
+        : `<button class="exercise-start-btn" onclick="startInlineTimer(${i}, 0)">▶ Go</button>`;
+
+      return `
+        <div class="exercise-item">
+          <div class="exercise-item-top">
+            <span class="exercise-item-label">${e}</span>
+            ${timerBtn}
+          </div>
+          <div class="exercise-inline-timer" id="inline-timer-${i}">
+            <div class="inline-timer-display" id="inline-display-${i}">
+              ${secs ? (Math.floor(secs/60)+'\''+String(secs%60).padStart(2,'0')) : '00:00'}
+            </div>
+            <div class="inline-timer-controls">
+              <button class="inline-btn inline-btn-start" onclick="toggleInlineTimer(${i})">▶</button>
+              <button class="inline-btn inline-btn-reset" onclick="resetInlineTimer(${i})">↺</button>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
   document.getElementById('workoutNote').textContent = w.note;
 
   // Bouton marquer fait
