@@ -1,16 +1,17 @@
 /* ===== Variables & reset ===== */
 :root {
   --red: #d71920;
-  --dark: #171717;
-  --dark2: #222;
-  --soft: #f5f5f5;
   --ok: #1f8a4c;
-  --warn: #ffb703;
+  --warn: #e07b00;
   --blue: #2563eb;
-  --card: #1e1e1e;
-  --card2: #2a2a2a;
-  --txt: #f0f0f0;
-  --txt2: #aaa;
+  --bg: #f2f2f7;
+  --card: #ffffff;
+  --card2: #f0f0f0;
+  --txt: #1a1a1a;
+  --txt2: #666;
+  --border: #e0e0e0;
+  --topbar-bg: #ffffff;
+  --nav-bg: #ffffff;
   --radius: 16px;
   --nav-h: 64px;
 }
@@ -20,7 +21,7 @@
 html, body {
   height: 100%;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
-  background: var(--dark);
+  background: var(--bg);
   color: var(--txt);
   font-size: 16px;
   -webkit-tap-highlight-color: transparent;
@@ -35,11 +36,11 @@ html, body {
   min-height: 100dvh;
   padding: 32px 24px;
   gap: 32px;
-  background: linear-gradient(160deg, #1a1a1a, #0d0d0d);
+  background: linear-gradient(160deg, #fff5f5, #ffffff);
 }
 
 #profileScreen h1 {
-  font-size: 1.7rem;
+  font-size: 1.8rem;
   font-weight: 900;
   color: var(--red);
   text-align: center;
@@ -65,7 +66,7 @@ html, body {
   flex: 1;
   min-width: 130px;
   background: var(--card);
-  border: 2px solid #333;
+  border: 2px solid var(--border);
   border-radius: var(--radius);
   padding: 28px 16px;
   display: flex;
@@ -73,12 +74,13 @@ html, body {
   align-items: center;
   gap: 12px;
   cursor: pointer;
-  transition: border-color 0.2s, transform 0.15s;
+  transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
   color: var(--txt);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
 }
 
 .profile-btn:active { transform: scale(0.97); }
-.profile-btn:hover { border-color: var(--red); }
+.profile-btn:hover { border-color: var(--red); box-shadow: 0 4px 20px rgba(215,25,32,0.15); }
 
 .profile-avatar {
   width: 72px;
@@ -91,8 +93,8 @@ html, body {
   font-weight: 900;
 }
 
-.profile-avatar.quentin { background: #2d1a1a; color: var(--red); }
-.profile-avatar.sophie  { background: #1a1e2d; color: #60a5fa; }
+.profile-avatar.quentin { background: #ffe5e5; color: var(--red); }
+.profile-avatar.sophie  { background: #e5eeff; color: var(--blue); }
 
 .profile-name {
   font-size: 1.2rem;
@@ -108,15 +110,16 @@ html, body {
 
 /* Top bar */
 .topbar {
-  background: var(--dark2);
+  background: var(--topbar-bg);
   padding: 14px 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid #333;
+  border-bottom: 1px solid var(--border);
   position: sticky;
   top: 0;
   z-index: 100;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.06);
 }
 
 .topbar-title {
@@ -133,11 +136,9 @@ html, body {
   color: var(--txt2);
   cursor: pointer;
   background: none;
-  border: none;
-  color: var(--txt2);
-  padding: 6px 10px;
+  border: 1px solid var(--border);
+  padding: 6px 12px;
   border-radius: 999px;
-  border: 1px solid #333;
 }
 
 /* Pages */
@@ -157,10 +158,11 @@ html, body {
   left: 0;
   right: 0;
   height: var(--nav-h);
-  background: var(--dark2);
-  border-top: 1px solid #333;
+  background: var(--nav-bg);
+  border-top: 1px solid var(--border);
   display: flex;
   z-index: 100;
+  box-shadow: 0 -1px 8px rgba(0,0,0,0.06);
 }
 
 .nav-btn {
@@ -169,11 +171,11 @@ html, body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 3px;
   background: none;
   border: none;
   color: var(--txt2);
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   cursor: pointer;
   padding: 8px 0;
   transition: color 0.15s;
@@ -192,46 +194,46 @@ html, body {
   border-radius: var(--radius);
   padding: 16px;
   margin-bottom: 14px;
-  border: 1px solid #2a2a2a;
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 6px rgba(0,0,0,0.04);
 }
 
 .card-title {
-  font-size: 1rem;
   font-weight: 800;
   color: var(--txt2);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin-bottom: 12px;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
 }
 
 /* ===== Page Accueil ===== */
 .day-hero {
-  background: linear-gradient(135deg, #2d1a1a, #1e1e1e);
-  border: 1px solid #3d2020;
+  background: linear-gradient(135deg, var(--red), #a01018);
   border-radius: var(--radius);
-  padding: 20px;
+  padding: 22px;
   margin-bottom: 14px;
   text-align: center;
+  box-shadow: 0 4px 20px rgba(215,25,32,0.25);
 }
 
 .day-number {
   font-size: 3.5rem;
   font-weight: 900;
-  color: var(--red);
+  color: #ffffff;
   line-height: 1;
 }
 
 .day-label {
   font-size: 0.9rem;
-  color: var(--txt2);
+  color: rgba(255,255,255,0.8);
   margin-top: 4px;
 }
 
 .day-cycle {
   display: inline-block;
-  background: #2d1a1a;
-  color: var(--red);
+  background: rgba(255,255,255,0.2);
+  color: #ffffff;
   border-radius: 999px;
   padding: 4px 12px;
   font-size: 0.8rem;
@@ -240,20 +242,98 @@ html, body {
 }
 
 .workout-title {
-  font-size: 1.15rem;
+  font-size: 1.1rem;
   font-weight: 800;
   margin-bottom: 12px;
   color: var(--txt);
 }
 
+/* Exercice dans la séance — avec bouton timer intégré */
 .exercise-item {
   border-left: 3px solid var(--red);
-  padding: 10px 12px;
+  padding: 0;
   margin-bottom: 8px;
   background: var(--card2);
   border-radius: 0 10px 10px 0;
-  font-size: 0.95rem;
+  overflow: hidden;
 }
+
+.exercise-item-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 10px 10px 12px;
+  gap: 8px;
+}
+
+.exercise-item-label {
+  font-size: 0.95rem;
+  flex: 1;
+}
+
+.exercise-start-btn {
+  background: var(--red);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 7px 12px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.exercise-start-btn:active { opacity: 0.8; transform: scale(0.97); }
+
+/* Mini-timer inline dans l'exercice */
+.exercise-inline-timer {
+  display: none;
+  background: #1a1a1a;
+  padding: 12px 14px;
+  border-top: 1px solid #333;
+  align-items: center;
+  gap: 10px;
+}
+
+.exercise-inline-timer.visible {
+  display: flex;
+}
+
+.inline-timer-display {
+  font-size: 2rem;
+  font-weight: 900;
+  color: #ffffff;
+  font-variant-numeric: tabular-nums;
+  min-width: 80px;
+  text-align: center;
+}
+
+.inline-timer-display.running { color: #ff6b6b; }
+.inline-timer-display.finished { color: #4ade80; }
+
+.inline-timer-controls {
+  display: flex;
+  gap: 6px;
+  flex: 1;
+  justify-content: flex-end;
+}
+
+.inline-btn {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: none;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.inline-btn-start { background: var(--red); color: white; }
+.inline-btn-pause { background: #444; color: white; }
+.inline-btn-reset { background: #333; color: #aaa; }
 
 .workout-note {
   font-size: 0.82rem;
@@ -278,15 +358,8 @@ html, body {
 .btn:active { transform: scale(0.98); opacity: 0.85; }
 
 .btn-primary { background: var(--red); color: white; }
-.btn-secondary { background: var(--card2); color: var(--txt); border: 1px solid #444; }
+.btn-secondary { background: var(--card2); color: var(--txt); border: 1px solid var(--border); }
 .btn-success { background: var(--ok); color: white; }
-
-.btn-row {
-  display: flex;
-  gap: 8px;
-  margin-top: 8px;
-}
-.btn-row .btn { flex: 1; padding: 14px 8px; font-size: 0.9rem; }
 
 /* Feedback séance */
 .feedback-row {
@@ -298,7 +371,7 @@ html, body {
   flex: 1;
   padding: 12px 6px;
   border-radius: var(--radius);
-  border: 2px solid #333;
+  border: 2px solid var(--border);
   background: var(--card2);
   color: var(--txt2);
   font-size: 0.85rem;
@@ -313,7 +386,7 @@ html, body {
 
 /* XP bar */
 .xp-bar-wrap {
-  background: #333;
+  background: var(--card2);
   border-radius: 999px;
   height: 10px;
   overflow: hidden;
@@ -330,15 +403,15 @@ html, body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 0;
-  border-bottom: 1px solid #2a2a2a;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--border);
   font-size: 0.95rem;
 }
 .stat-row:last-child { border-bottom: none; }
 .stat-label { color: var(--txt2); }
 .stat-value { font-weight: 800; color: var(--txt); }
 
-/* ===== Timer ===== */
+/* ===== Timer page ===== */
 .timer-display {
   font-size: 5rem;
   font-weight: 900;
@@ -361,7 +434,7 @@ html, body {
 
 .preset-btn {
   background: var(--card2);
-  border: 1px solid #333;
+  border: 1px solid var(--border);
   border-radius: 10px;
   color: var(--txt);
   padding: 10px 4px;
@@ -388,7 +461,7 @@ html, body {
 
 .cal-nav-btn {
   background: var(--card2);
-  border: 1px solid #333;
+  border: 1px solid var(--border);
   color: var(--txt);
   border-radius: 10px;
   padding: 8px 14px;
@@ -427,14 +500,13 @@ html, body {
   border: 2px solid transparent;
   background: var(--card2);
   color: var(--txt2);
-  position: relative;
 }
 
 .cal-cell.empty { background: transparent; cursor: default; }
-.cal-cell.done { background: #163d28; color: #4ade80; border-color: #1f8a4c; }
-.cal-cell.missed { background: #3d1616; color: #f87171; border-color: #7f1d1d; }
-.cal-cell.rest { background: #1a2540; color: #93c5fd; border-color: #1e3a8a; }
-.cal-cell.today { border-color: var(--warn) !important; color: var(--warn); }
+.cal-cell.done { background: #e8f7ef; color: #166534; border-color: #bbf7d0; }
+.cal-cell.missed { background: #fef2f2; color: #991b1b; border-color: #fecaca; }
+.cal-cell.rest { background: #eff6ff; color: #1e40af; border-color: #bfdbfe; }
+.cal-cell.today { border-color: var(--warn) !important; color: var(--warn); background: #fff8e1; }
 .cal-cell.future { opacity: 0.4; cursor: default; }
 
 .cal-legend {
@@ -464,7 +536,8 @@ html, body {
   border-radius: var(--radius);
   margin-bottom: 10px;
   overflow: hidden;
-  border: 1px solid #2a2a2a;
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
 }
 
 .exercise-card-header {
@@ -491,7 +564,7 @@ html, body {
 .exercise-card-body {
   display: none;
   padding: 0 16px 14px;
-  border-top: 1px solid #2a2a2a;
+  border-top: 1px solid var(--border);
 }
 
 .exercise-card.open .exercise-card-body { display: block; }
@@ -504,7 +577,7 @@ html, body {
 }
 
 .muscle-tag {
-  background: #2d1a1a;
+  background: #ffe5e5;
   color: var(--red);
   border-radius: 999px;
   padding: 3px 10px;
@@ -516,9 +589,10 @@ html, body {
 .exercise-tip {
   margin-top: 8px;
   font-size: 0.85rem;
-  color: #60a5fa;
-  border-left: 2px solid #2563eb;
+  color: var(--blue);
+  border-left: 2px solid var(--blue);
   padding-left: 8px;
+  line-height: 1.5;
 }
 
 /* ===== Réglages ===== */
@@ -537,7 +611,7 @@ html, body {
 
 .settings-field {
   background: var(--card2);
-  border: 1px solid #333;
+  border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 14px;
   color: var(--txt);
@@ -550,7 +624,7 @@ html, body {
   border-color: var(--red);
 }
 
-/* ===== Badges / succès ===== */
+/* ===== Badges ===== */
 .badges-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -562,14 +636,14 @@ html, body {
   border-radius: var(--radius);
   padding: 14px 8px;
   text-align: center;
-  border: 1px solid #2a2a2a;
+  border: 1px solid var(--border);
   opacity: 0.35;
 }
 
 .badge-item.unlocked {
   opacity: 1;
   border-color: var(--warn);
-  background: #2a2200;
+  background: #fffbeb;
 }
 
 .badge-icon { font-size: 2rem; }
@@ -577,13 +651,13 @@ html, body {
 
 /* ===== Messages encouragement ===== */
 .encouragement {
-  background: linear-gradient(135deg, #163d28, #1a2a1a);
-  border: 1px solid #1f8a4c;
+  background: linear-gradient(135deg, #e8f7ef, #f0faf4);
+  border: 1px solid #bbf7d0;
   border-radius: var(--radius);
-  padding: 16px;
+  padding: 14px 16px;
   margin-bottom: 14px;
   font-size: 0.95rem;
-  color: #4ade80;
+  color: #166534;
   text-align: center;
   font-weight: 700;
 }
@@ -600,11 +674,11 @@ html, body {
 
 .text-muted { color: var(--txt2); font-size: 0.9rem; }
 .text-red { color: var(--red); }
-.text-green { color: #4ade80; }
+.text-green { color: var(--ok); }
 .mt-8 { margin-top: 8px; }
 .mt-16 { margin-top: 16px; }
 
 /* Scrollbar discrète */
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+::-webkit-scrollbar-thumb { background: #ccc; border-radius: 2px; }
