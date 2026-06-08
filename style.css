@@ -583,11 +583,12 @@ html, body {
 }
 
 .cal-cell.empty { background: transparent; cursor: default; }
-.cal-cell.done { background: #e8f7ef; color: #166534; border-color: #bbf7d0; }
-.cal-cell.missed { background: #fef2f2; color: #991b1b; border-color: #fecaca; }
-.cal-cell.rest { background: #eff6ff; color: #1e40af; border-color: #bfdbfe; }
-.cal-cell.today { border-color: var(--warn) !important; color: var(--warn); background: #fff8e1; }
-.cal-cell.future { opacity: 0.4; cursor: default; }
+.cal-cell.done { background: #16a34a; color: #fff; border-color: #15803d; }
+.cal-cell.missed { background: #dc2626; color: #fff; border-color: #b91c1c; }
+.cal-cell.rest { background: #2563eb; color: #fff; border-color: #1d4ed8; }
+.cal-cell.today { border-color: var(--warn) !important; color: #92400e; background: #fde68a; font-weight: 900; }
+.cal-cell.future { opacity: 0.55; cursor: default; }
+.cal-cell.future.rest { background: #93c5fd; color: #1e3a8a; border-color: #60a5fa; opacity: 0.7; }
 
 .cal-legend {
   display: flex;
