@@ -13,7 +13,7 @@ const EXERCISES = {
     errors: ["Ne pas creuser le dos", "Éviter de pencher le buste en avant"],
     variantEasy: "Marche rapide sur place",
     variantHard: "Genoux plus hauts, rythme plus rapide",
-    imagePath: "images exercices/Montées de genoux sans sauter.avif"
+    imagePath: "exercices/montees-genoux.avif"
   },
   "Footing sur place": {
     desc: "Courir sur place à allure modérée. Respirer naturellement, garder le buste droit.",
@@ -23,7 +23,7 @@ const EXERCISES = {
     errors: ["Ne pas frapper le sol avec le talon", "Éviter de se pencher trop en avant"],
     variantEasy: "Marche rapide sur place",
     variantHard: "Genoux hauts (high knees) à vitesse maximale",
-    imagePath: "images exercices/Footing sur place.avif"
+    imagePath: "exercices/footing-place.avif"
   },
   "Squats": {
     desc: "Pieds légèrement plus larges que les hanches. Reculer les fesses comme pour s'asseoir, dos droit. Descendre jusqu'aux cuisses proches de l'horizontale, remonter en poussant dans les talons.",
@@ -33,7 +33,7 @@ const EXERCISES = {
     errors: ["Genoux qui rentrent vers l'intérieur", "Dos qui se courbe", "Talons qui décollent"],
     variantEasy: "Squats avec appui sur une chaise",
     variantHard: "Squat sauté (jump squat)",
-    imagePath: "images exercices/squat.avif"
+    imagePath: "exercices/squat.avif"
   },
   "Dips chaise": {
     desc: "Mains sur le bord d'une chaise stable, fessiers devant la chaise. Fléchir les coudes vers l'arrière, descendre puis repousser. Garder la poitrine ouverte.",
@@ -43,7 +43,7 @@ const EXERCISES = {
     errors: ["Épaules qui remontent vers les oreilles", "Coudes qui s'écartent sur les côtés"],
     variantEasy: "Pieds très proches, peu de descente",
     variantHard: "Jambes tendues et surélevées",
-    imagePath: "images exercices/dips.avif"
+    imagePath: "exercices/dips.avif"
   },
   "Pompes mur": {
     desc: "Mains sur le mur à largeur d'épaules, corps gainé. Plier les bras pour approcher la poitrine du mur, repousser pour revenir.",
@@ -53,7 +53,7 @@ const EXERCISES = {
     errors: ["Bassin qui tombe", "Coudes qui s'écartent à 90°"],
     variantEasy: "Mains plus hautes sur le mur",
     variantHard: "Pompes sur une table inclinée",
-    imagePath: "images exercices/Pompes au mur (pec).avif"
+    imagePath: "exercices/pompes-mur.avif"
   },
   "Pompes genoux": {
     desc: "Au sol sur les genoux, corps aligné de la tête aux genoux. Descendre contrôlé, remonter en soufflant.",
@@ -63,7 +63,7 @@ const EXERCISES = {
     errors: ["Fesses en l'air", "Corps qui n'est pas aligné", "Coudes trop écartés"],
     variantEasy: "Pompes mur",
     variantHard: "Pompes au sol sur les orteils",
-    imagePath: "images exercices/Pompes au mur (pec).avif"
+    imagePath: "exercices/pompes-mur.avif"
   },
   "Pompes sol": {
     desc: "Corps en planche complète, mains sous les épaules. Garder les abdos serrés tout le mouvement.",
@@ -73,7 +73,7 @@ const EXERCISES = {
     errors: ["Hanches trop hautes ou trop basses", "Regard vers l'avant au lieu du sol"],
     variantEasy: "Pompes genoux",
     variantHard: "Pompes diamant, pompes déclinées",
-    imagePath: "images exercices/Pompes au sol (pec).avif"
+    imagePath: "exercices/pompes-sol.avif"
   },
   "Pont fessier": {
     desc: "Allongé sur le dos, pieds à plat près des fesses. Lever le bassin jusqu'à aligner épaules, hanches et genoux. Redescendre lentement.",
@@ -83,7 +83,7 @@ const EXERCISES = {
     errors: ["Bassin qui ne monte pas assez", "Genoux qui s'écartent"],
     variantEasy: "Amplitude réduite",
     variantHard: "Pont fessier sur une jambe",
-    imagePath: "images exercices/pont fessiers.avif"
+    imagePath: "exercices/pont-fessiers.avif"
   },
   "Chaise": {
     desc: "Dos contre le mur, descendre jusqu'à former un angle proche de 90°. Maintenir la position avec les abdos engagés.",
@@ -93,7 +93,7 @@ const EXERCISES = {
     errors: ["Dos décollé du mur", "Genoux devant les orteils"],
     variantEasy: "Angle moins profond (120°)",
     variantHard: "Lever alternativement un talon",
-    imagePath: "images exercices/Chaises.avif"
+    imagePath: "exercices/chaise.avif"
   },
   "Gainage face": {
     desc: "Sur les coudes ou les mains, corps en planche. Contracter les abdominaux. Maintenir sans creuser le dos.",
@@ -103,7 +103,7 @@ const EXERCISES = {
     errors: ["Dos creusé ou arrondi", "Fesses trop hautes", "Retenir sa respiration"],
     variantEasy: "Gainage sur les genoux",
     variantHard: "Gainage avec levé de jambe alterné",
-    imagePath: "images exercices/Gainage de face sur les coudes.avif"
+    imagePath: "exercices/gainage-face.avif"
   },
   "Gainage côté": {
     desc: "Appui sur un coude et les genoux ou les pieds. Corps aligné, maintenir la position sans laisser tomber le bassin.",
@@ -113,7 +113,7 @@ const EXERCISES = {
     errors: ["Bassin qui s'affaisse", "Épaule qui remonte"],
     variantEasy: "Genoux au sol",
     variantHard: "Lever la jambe du dessus",
-    imagePath: "images exercices/Gainage profil sur le coude.avif"
+    imagePath: "exercices/gainage-cote.avif"
   },
   "Superman": {
     desc: "Allongé sur le ventre, lever simultanément bras et jambes. Garder la tête dans l'alignement du dos. Redescendre lentement.",
@@ -123,7 +123,7 @@ const EXERCISES = {
     errors: ["Nuque cassée (tête trop relevée)", "Mouvement trop brusque"],
     variantEasy: "Lever un bras et la jambe opposée",
     variantHard: "Tenir 5 secondes en haut",
-    imagePath: "images exercices/Super man.avif"
+    imagePath: "exercices/superman.avif"
   },
   "Fentes": {
     desc: "Faire un grand pas en avant, descendre en pliant les deux jambes. Garder le buste droit. Revenir à la position de départ.",
@@ -133,7 +133,7 @@ const EXERCISES = {
     errors: ["Genou avant qui dépasse les orteils", "Buste penché en avant"],
     variantEasy: "Fentes statiques avec appui",
     variantHard: "Fentes marchées ou sautées",
-    imagePath: "images exercices/Fentes.avif"
+    imagePath: "exercices/fentes.avif"
   },
   "Jumping jack": {
     desc: "Sauter en écartant jambes et bras simultanément. Revenir en position initiale. Maintenir un rythme régulier.",
@@ -143,7 +143,7 @@ const EXERCISES = {
     errors: ["Atterrissage rigide sur les talons", "Bras qui ne montent pas assez"],
     variantEasy: "Version sans saut (step jack)",
     variantHard: "Jumping jack avec squat",
-    imagePath: "images exercices/1- Jumping jack.avif"
+    imagePath: "exercices/jumping-jack.avif"
   },
   "Mountain climbers": {
     desc: "Position de planche, ramener alternativement les genoux vers la poitrine. Garder le bassin stable.",
@@ -153,7 +153,7 @@ const EXERCISES = {
     errors: ["Bassin qui monte et descend", "Épaules qui reculent"],
     variantEasy: "Version lente sur table",
     variantHard: "Version rapide (sprint)",
-    imagePath: "images exercices/Mountain climbers.avif"
+    imagePath: "exercices/mountain-climbers.avif"
   },
   "Étirements": {
     desc: "Respiration lente et profonde. Psoas, dos, ischios, mollets, quadriceps. Ne jamais forcer.",
@@ -187,22 +187,26 @@ function workout(day, diffOffset = 0) {
   const d = ((day - 1) % 7) + 1;
   const hard = c - 1;
   const rest = Math.max(30, 60 - (c - 1) * 5);
-  let reps = 15 + Math.min(15, hard * 3) + diffOffset * 5;
-  reps = Math.max(8, reps);
-  let plank = 30 + Math.min(45, hard * 5) + diffOffset * 5;
-  plank = Math.max(20, plank);
-  const title = baseWeek(day);
 
+  // Durée par série : commence à 30s, +5s par cycle, +5s par cran de difficulté
+  let t = 30 + Math.min(30, hard * 5) + diffOffset * 5;
+  t = Math.max(20, Math.min(t, 90));
+
+  // Gainage/chaise : durée de maintien (un peu moins longue)
+  let plank = 25 + Math.min(35, hard * 5) + diffOffset * 5;
+  plank = Math.max(20, Math.min(plank, 75));
+
+  const title = baseWeek(day);
   let list = [];
 
   if (day <= 14) {
-    if (d === 1) list = [`Montées de genoux — 3 x 20`, `Squats — 3 x 15`, `Dips chaise — 3 x 10 à 15`, `Pompes mur — 3 x 15`];
-    if (d === 2) list = [`Footing sur place — 3 x 1 min`, `Squats — 3 x 15`, `Pont fessier — 3 x 15`, `Chaise — 3 x 30s`];
-    if (d === 3) list = [`Montées de genoux — 3 x 20`, `Pompes mur — 3 x 15`, `Dips chaise — 3 x 10 à 15`, `Pompes genoux — 3 x 8 à 12`];
+    if (d === 1) list = [`Montées de genoux — 3 x 30s`, `Squats — 3 x 30s`, `Dips chaise — 3 x 25s`, `Pompes mur — 3 x 25s`];
+    if (d === 2) list = [`Footing sur place — 3 x 45s`, `Squats — 3 x 30s`, `Pont fessier — 3 x 30s`, `Chaise — 3 x 30s`];
+    if (d === 3) list = [`Montées de genoux — 3 x 30s`, `Pompes mur — 3 x 25s`, `Dips chaise — 3 x 25s`, `Pompes genoux — 3 x 25s`];
     if (d === 4) list = [`Étirements — 10 à 15 min`];
-    if (d === 5) list = [`Montées de genoux — 3 x 20`, `Squats — 3 x 15`, `Gainage côté — 2 x 30s par côté`, `Superman — 3 x 15`];
-    if (d === 6) list = [`Montées de genoux — 3 x 20`, `Squats — 3 x 15`, `Pont fessier — 3 x 15`, `Fentes — 2 x 30s par jambe`];
-    if (d === 7) list = [`Footing sur place — 3 x 1 min`, `Pompes mur — 3 x 15`, `Gainage face — 3 x 30s`, `Dips chaise — 3 x 10 à 15`];
+    if (d === 5) list = [`Montées de genoux — 3 x 30s`, `Squats — 3 x 30s`, `Gainage côté — 2 x 25s par côté`, `Superman — 3 x 25s`];
+    if (d === 6) list = [`Montées de genoux — 3 x 30s`, `Squats — 3 x 30s`, `Pont fessier — 3 x 30s`, `Fentes — 2 x 30s par jambe`];
+    if (d === 7) list = [`Footing sur place — 3 x 45s`, `Pompes mur — 3 x 25s`, `Gainage face — 3 x 25s`, `Dips chaise — 3 x 25s`];
     return { title, list, note: "Récupération : 1 min entre exercices, 30s entre séries.", isRest: d === 4 };
   }
 
@@ -222,14 +226,17 @@ function workout(day, diffOffset = 0) {
   rounds += Math.max(0, c - 1) + diffOffset;
   rounds = Math.max(1, Math.min(rounds, 6));
 
-  list = circuit[d].map(x =>
-    `${x} — ${(x.includes('Gainage') || x === 'Chaise') ? plank + 's' : reps + ' reps'}`
-  );
+  // Tous les exercices sont maintenant basés sur le temps
+  list = circuit[d].map(x => {
+    const isStatic = x.includes('Gainage') || x === 'Chaise';
+    const dur = isStatic ? plank : t;
+    return `${x} — ${dur}s`;
+  });
 
   return {
     title: `${title} — circuit ${rounds} tour${rounds > 1 ? 's' : ''}`,
     list,
-    note: `Repos : ${rest}s entre exercices, 1 à 2 min entre les tours.`,
+    note: `${t}s d'effort, ${rest}s de repos entre exercices.`,
     isRest: false
   };
 }
@@ -797,19 +804,15 @@ function renderHome() {
 
       const exName = e.split(' — ')[0].trim();
 
-      const goBtn = secs
-        ? `<button class="exercise-start-btn" onclick="startInlineTimer(${i}, ${secs})">⏱ ${secs}s</button>`
-        : `<button class="exercise-start-btn" onclick="startInlineTimer(${i}, 60)">▶ Go</button>`;
+      // Tous les exercices ont maintenant une durée — fallback 30s si non détecté
+      const duration = secs || 30;
+      const goBtn = `<button class="exercise-start-btn" onclick="startInlineTimer(${i}, ${duration})">⏱ ${duration}s</button>`;
 
-      // Toujours afficher les contrôles timer ; pour les reps, le timer sert de chrono de repos
-      const timerLabel = secs ? '' : '<span style="font-size:0.7rem;color:#888;margin-left:4px;">repos</span>';
       const timerControls = `
         <button class="inline-btn inline-btn-start" onclick="toggleInlineTimer(${i})">▶</button>
         <button class="inline-btn inline-btn-reset" onclick="resetInlineTimer(${i})">↺</button>`;
 
-      const defaultDisplay = secs
-        ? (String(Math.floor(secs/60)).padStart(2,'0')+':'+String(secs%60).padStart(2,'0'))
-        : '01:00';
+      const defaultDisplay = String(Math.floor(duration/60)).padStart(2,'0') + ':' + String(duration%60).padStart(2,'0');
 
       const infoBtn = EXERCISES[exName]
         ? `<button class="exercise-info-btn" onclick="openExerciseModal('${exName.replace(/'/g, "\\'")}')">ℹ️</button>`
@@ -825,10 +828,7 @@ function renderHome() {
           <div class="exercise-inline-timer" id="inline-timer-${i}" data-sets="${targetSets}">
             <div style="display:flex;flex-direction:column;gap:8px;width:100%;">
               <div style="display:flex;align-items:center;gap:10px;">
-                <div style="display:flex;align-items:baseline;gap:2px;">
-                  <div class="inline-timer-display" id="inline-display-${i}">${defaultDisplay}</div>
-                  ${timerLabel}
-                </div>
+                <div class="inline-timer-display" id="inline-display-${i}">${defaultDisplay}</div>
                 <div class="inline-timer-controls" style="gap:6px;">
                   ${timerControls}
                 </div>
@@ -1186,7 +1186,7 @@ function openExerciseModal(name) {
   // Encoder les espaces dans le chemin pour que le navigateur charge bien le fichier
   const imgEl = document.getElementById('modalExImg');
   if (ex.imagePath) {
-    imgEl.src = ex.imagePath.replace(/ /g, '%20');
+    imgEl.src = ex.imagePath;
     imgEl.style.display = 'block';
   } else {
     imgEl.src = '';
