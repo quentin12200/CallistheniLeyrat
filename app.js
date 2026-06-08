@@ -566,6 +566,18 @@ function inlineTimerActive() {
 // structure : { remaining, initial, interval, running, targetSets, doneSets, isTimed }
 const inlineTimers = {};
 
+function saveSeriesProgress() {
+  const progress = {};
+  Object.entries(inlineTimers).forEach(([idx, t]) => {
+    if (t) progress[idx] = t.doneSets;
+  });
+  store('series_progress_' + dayNumber(), progress);
+}
+
+function loadSeriesProgress() {
+  return load('series_progress_' + dayNumber(), {});
+}
+
 function startInlineTimer(idx, secs) {
   const timerEl = document.getElementById('inline-timer-' + idx);
   timerEl.classList.add('visible');
@@ -573,9 +585,11 @@ function startInlineTimer(idx, secs) {
   if (!inlineTimers[idx]) {
     const initial = secs > 0 ? secs : 60;
     const targetSets = parseInt(timerEl.dataset.sets) || 3;
+    const savedProgress = loadSeriesProgress();
+    const doneSets = savedProgress[idx] || 0;
     inlineTimers[idx] = {
       remaining: initial, initial, interval: null, running: false,
-      targetSets, doneSets: 0, isTimed: true // toujours actif
+      targetSets, doneSets, isTimed: true
     };
   }
   renderInlineTimer(idx);
@@ -687,6 +701,9 @@ function recordSerie(idx) {
     const itemEl = timerEl.closest('.exercise-item');
     if (itemEl) itemEl.classList.add('exercise-item-done');
   }
+
+  // Persister la progression en localStorage
+  saveSeriesProgress();
 
   checkAllSeriesDone();
 }
@@ -810,6 +827,7 @@ function renderHome() {
       </div>`).join('');
     document.getElementById('workoutNote').textContent = '';
   } else {
+    const savedProgress = loadSeriesProgress();
     document.getElementById('workoutExercises').innerHTML = w.list
     .map((e, i) => {
       // Extraire durée si chrono
@@ -827,6 +845,27 @@ function renderHome() {
 
       // Tous les exercices ont maintenant une durée — fallback 30s si non détecté
       const duration = secs || 30;
+
+      const infoBtn = EXERCISES[exName]
+        ? `<button class="exercise-info-btn" onclick="openExerciseModal('${exName.replace(/'/g, "\\'")}')">ℹ️</button>`
+        : '';
+
+      // Restaurer la progression sauvegardée
+      const doneSets = savedProgress[i] || 0;
+      const exerciseDone = doneSets >= targetSets;
+
+      if (exerciseDone) {
+        // Exercice déjà terminé : afficher en vert directement
+        return `
+          <div class="exercise-item exercise-item-done">
+            <div class="exercise-item-top">
+              <span class="exercise-done-check">✓</span>
+              <span class="exercise-item-label">${e}</span>
+              ${infoBtn}
+            </div>
+          </div>`;
+      }
+
       const goBtn = `<button class="exercise-start-btn" onclick="startInlineTimer(${i}, ${duration})">⏱ ${duration}s</button>`;
 
       const timerControls = `
@@ -835,9 +874,8 @@ function renderHome() {
 
       const defaultDisplay = String(Math.floor(duration/60)).padStart(2,'0') + ':' + String(duration%60).padStart(2,'0');
 
-      const infoBtn = EXERCISES[exName]
-        ? `<button class="exercise-info-btn" onclick="openExerciseModal('${exName.replace(/'/g, "\\'")}')">ℹ️</button>`
-        : '';
+      const serieLabel = doneSets === 0 ? '✓ Première série !'
+        : `✓ Série ${doneSets + 1}/${targetSets}`;
 
       return `
         <div class="exercise-item">
@@ -853,16 +891,31 @@ function renderHome() {
                 <div class="inline-timer-controls" style="gap:6px;">
                   ${timerControls}
                 </div>
-                <div class="inline-series-counter" id="inline-counter-${i}">0/${targetSets}</div>
+                <div class="inline-series-counter" id="inline-counter-${i}">${doneSets}/${targetSets}</div>
               </div>
               <button class="inline-btn inline-btn-serie" id="inline-serie-btn-${i}" onclick="recordSerie(${i})">
-                ✓ Première série !
+                ${serieLabel}
               </button>
             </div>
           </div>
         </div>`;
     }).join('');
     document.getElementById('workoutNote').textContent = w.note;
+
+    // Restaurer inlineTimers pour les exercices partiellement faits
+    w.list.forEach((e, i) => {
+      const doneSets = savedProgress[i] || 0;
+      if (doneSets > 0 && !(doneSets >= (parseInt(e.match(/(\d+)\s*x/)?.[1]) || 3))) {
+        const secMatch = e.match(/(\d+)s/);
+        const minMatch = e.match(/(\d+)\s*min/);
+        let secs = secMatch ? parseInt(secMatch[1]) : (minMatch ? parseInt(minMatch[1]) * 60 : 30);
+        const targetSets = parseInt(e.match(/(\d+)\s*x/)?.[1]) || 3;
+        inlineTimers[i] = {
+          remaining: secs, initial: secs, interval: null, running: false,
+          targetSets, doneSets, isTimed: true
+        };
+      }
+    });
   } // fin du else (séance pas encore faite)
 
   // État séance : déjà faite ou en cours
