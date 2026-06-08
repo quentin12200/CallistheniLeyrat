@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#d71920" />
+  <meta name="description" content="Programme callisthénie progressif — Quentin et Sophie" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>CallistheniLeyrat</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- ===== Écran de sélection de profil ===== -->
+<div id="profileScreen">
+  <h1>Callisthénie<br>Leyrat</h1>
+  <p>Choisis ton profil pour accéder à ton programme personnalisé.</p>
+  <div class="profile-cards">
+    <button class="profile-btn" onclick="selectProfile('quentin')">
+      <div class="profile-avatar quentin">Q</div>
+      <div class="profile-name">Quentin</div>
+    </button>
+    <button class="profile-btn" onclick="selectProfile('sophie')">
+      <div class="profile-avatar sophie">S</div>
+      <div class="profile-name">Sophie</div>
+    </button>
+  </div>
+</div>
+
+<!-- ===== Application principale ===== -->
+<div id="app" class="hidden">
+
+  <!-- Top bar -->
+  <div class="topbar">
+    <span class="topbar-title">💪 CallistheniLeyrat</span>
+    <button class="topbar-profile" onclick="switchProfile()">
+      <span id="topbarProfileName"></span>
+      <span>⇄</span>
+    </button>
+  </div>
+
+  <!-- Bandeau retour après absence -->
+  <div id="comebackBanner" class="encouragement hidden" style="margin:10px 14px 0;border-radius:12px;">
+    <span id="comebackMsg"></span>
+    <button onclick="document.getElementById('comebackBanner').classList.add('hidden')"
+      style="background:none;border:none;color:#4ade80;font-size:1.2rem;cursor:pointer;margin-left:8px;">✕</button>
+  </div>
+
+  <!-- Bandeau installation PWA -->
+  <div id="installBanner" class="hidden"
+    style="margin:10px 14px 0;background:#1a2a1a;border:1px solid #1f8a4c;border-radius:12px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px;">
+    <span style="font-size:0.9rem;color:#4ade80;">📲 Installer l'app sur ton écran d'accueil</span>
+    <button onclick="installApp()" class="btn btn-success" style="padding:8px 14px;width:auto;font-size:0.85rem;">Installer</button>
+  </div>
+
+  <!-- ── Page Accueil ── -->
+  <div id="page-home" class="page active">
+
+    <!-- Héro : jour actuel -->
+    <div class="day-hero">
+      <div class="day-number" id="heroDay">1</div>
+      <div class="day-label" id="heroLabel">Complet doux</div>
+      <div class="day-cycle" id="heroCycle">Cycle 1</div>
+    </div>
+
+    <!-- Message retour (caché par défaut) -->
+    <div id="encouragementMsg" class="encouragement hidden"></div>
+
+    <!-- Séance du jour -->
+    <div class="card">
+      <div class="card-title">Séance du jour</div>
+      <div class="workout-title" id="workoutTitle"></div>
+      <div id="workoutExercises"></div>
+      <div class="workout-note" id="workoutNote"></div>
+
+      <!-- Feedback ressenti -->
+      <div id="feedbackSection">
+        <div class="card-title mt-16">Comment tu te sens ?</div>
+        <div class="feedback-row">
+          <button class="feedback-btn" data-val="easy" onclick="selectFeedback('easy')">😄 Facile</button>
+          <button class="feedback-btn selected" data-val="ok" onclick="selectFeedback('ok')">👍 OK</button>
+          <button class="feedback-btn" data-val="hard" onclick="selectFeedback('hard')">😤 Dur</button>
+        </div>
+      </div>
+
+      <button id="markDoneBtn" class="btn btn-primary mt-16" onclick="handleMarkDone()">
+        ✓ Marquer comme fait
+      </button>
+    </div>
+
+    <!-- Progression RPG -->
+    <div class="card">
+      <div class="card-title">Progression</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <span style="font-weight:800;" id="rpgName">Débutant</span>
+        <span class="text-muted" id="rpgXP">0 XP</span>
+      </div>
+      <div class="xp-bar-wrap">
+        <div class="xp-bar-fill" id="rpgBar" style="width:0%"></div>
+      </div>
+      <div class="text-muted mt-8" style="font-size:0.82rem;" id="rpgNext"></div>
+    </div>
+
+    <!-- Stats rapides -->
+    <div class="card">
+      <div class="card-title">Stats rapides</div>
+      <div class="stat-row">
+        <span class="stat-label">Séances réalisées</span>
+        <span class="stat-value" id="statSessions">0</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">Série actuelle</span>
+        <span class="stat-value" id="statStreak">0 j</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">Meilleure série</span>
+        <span class="stat-value" id="statBestStreak">0 j</span>
+      </div>
+    </div>
+
+    <!-- Badges -->
+    <div class="card">
+      <div class="card-title">Succès</div>
+      <div class="badges-grid" id="badgesGrid">
+        <!-- généré par JS -->
+      </div>
+    </div>
+
+  </div><!-- /page-home -->
+
+  <!-- ── Page Timer ── -->
+  <div id="page-timer" class="page">
+    <div class="section-title">⏱ Timer séance</div>
+
+    <div class="card">
+      <div class="card-title">Durée</div>
+      <div class="timer-presets">
+        <button class="preset-btn active-preset" data-secs="30" onclick="setTimerDuration(30)">30s</button>
+        <button class="preset-btn" data-secs="45" onclick="setTimerDuration(45)">45s</button>
+        <button class="preset-btn" data-secs="60" onclick="setTimerDuration(60)">1 min</button>
+        <button class="preset-btn" data-secs="90" onclick="setTimerDuration(90)">1min30</button>
+      </div>
+      <div class="timer-display" id="timerDisplay">00:30</div>
+      <div class="timer-controls">
+        <button class="btn btn-primary" onclick="startTimer()">▶ Démarrer</button>
+        <button class="btn btn-secondary" onclick="pauseTimer()">⏸ Pause</button>
+      </div>
+      <button class="btn btn-secondary mt-8" onclick="resetTimer()">↺ Reset</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Durée personnalisée</div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input type="number" id="customTimerInput" min="5" max="600" value="60"
+          class="settings-field" style="flex:1;" />
+        <button class="btn btn-secondary" style="width:auto;padding:14px 16px;"
+          onclick="setTimerDuration(parseInt(document.getElementById('customTimerInput').value)||60)">
+          OK
+        </button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">À savoir</div>
+      <div class="text-muted" style="font-size:0.9rem;line-height:1.6;">
+        Le timer vibre et émet un bip à la fin. Utilise-le pour mesurer tes temps de gainage, de repos, ou tes séries.
+      </div>
+    </div>
+  </div><!-- /page-timer -->
+
+  <!-- ── Page Calendrier ── -->
+  <div id="page-calendar" class="page">
+    <div class="section-title">📅 Calendrier</div>
+
+    <div class="card">
+      <div class="cal-header">
+        <button class="cal-nav-btn" onclick="calPrev()">‹</button>
+        <span class="cal-month-label" id="calMonthLabel"></span>
+        <button class="cal-nav-btn" onclick="calNext()">›</button>
+      </div>
+
+      <!-- Jours de la semaine -->
+      <div class="cal-grid" id="calDayNames">
+        <div class="cal-day-name">Lun</div>
+        <div class="cal-day-name">Mar</div>
+        <div class="cal-day-name">Mer</div>
+        <div class="cal-day-name">Jeu</div>
+        <div class="cal-day-name">Ven</div>
+        <div class="cal-day-name">Sam</div>
+        <div class="cal-day-name">Dim</div>
+      </div>
+
+      <div class="cal-grid mt-8" id="calGrid"></div>
+
+      <div class="cal-legend mt-16">
+        <div class="legend-item"><div class="legend-dot" style="background:#1f8a4c;"></div>Réalisée</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#7f1d1d;"></div>Manquée</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#1e3a8a;"></div>Repos</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--warn);"></div>Aujourd'hui</div>
+      </div>
+    </div>
+  </div><!-- /page-calendar -->
+
+  <!-- ── Page Bibliothèque ── -->
+  <div id="page-library" class="page">
+    <div class="section-title">📚 Bibliothèque</div>
+    <div id="libraryList"></div>
+  </div>
+
+  <!-- ── Page Réglages ── -->
+  <div id="page-settings" class="page">
+    <div class="section-title">⚙️ Réglages</div>
+
+    <div class="card">
+      <div class="card-title">Programme</div>
+
+      <div class="settings-group">
+        <div class="settings-label">Date de départ</div>
+        <input type="date" id="settingStartDate" class="settings-field" />
+      </div>
+
+      <div class="settings-group">
+        <div class="settings-label">Niveau de départ</div>
+        <select id="settingLevel" class="settings-field">
+          <option value="facile">Reprise tranquille</option>
+          <option value="normal">Normal</option>
+          <option value="fort">Déjà à l'aise</option>
+        </select>
+      </div>
+
+      <div class="settings-group">
+        <div class="settings-label">Objectif</div>
+        <select id="settingObjective" class="settings-field">
+          <option value="poids">Perte de poids</option>
+          <option value="remise">Remise en forme</option>
+          <option value="muscu">Renforcement musculaire</option>
+          <option value="endurance">Endurance</option>
+        </select>
+      </div>
+
+      <div class="settings-group">
+        <div class="settings-label">Rythme hebdomadaire</div>
+        <select id="settingRythm" class="settings-field">
+          <option value="3">3 jours / semaine</option>
+          <option value="4">4 jours / semaine</option>
+          <option value="5">5 jours / semaine</option>
+          <option value="7">Quotidien</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Notifications</div>
+
+      <div class="settings-group" style="display:flex;justify-content:space-between;align-items:center;">
+        <div class="settings-label" style="margin-bottom:0;">Activer les rappels</div>
+        <input type="checkbox" id="settingNotifEnabled" style="width:20px;height:20px;cursor:pointer;" />
+      </div>
+
+      <div class="settings-group mt-8">
+        <div class="settings-label">Heure de rappel</div>
+        <input type="time" id="settingNotifTime" class="settings-field" />
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Ton profil RPG</div>
+      <div class="text-muted" id="rpgResetInfo"></div>
+    </div>
+
+    <button class="btn btn-primary mt-16" onclick="saveSettings()">Enregistrer</button>
+  </div><!-- /page-settings -->
+
+  <!-- ── Navigation bas ── -->
+  <nav class="bottom-nav">
+    <button class="nav-btn active" id="nav-home" onclick="showPage('home')">
+      <span class="nav-icon">🏠</span>
+      <span>Accueil</span>
+    </button>
+    <button class="nav-btn" id="nav-timer" onclick="showPage('timer')">
+      <span class="nav-icon">⏱</span>
+      <span>Timer</span>
+    </button>
+    <button class="nav-btn" id="nav-calendar" onclick="showPage('calendar')">
+      <span class="nav-icon">📅</span>
+      <span>Calendrier</span>
+    </button>
+    <button class="nav-btn" id="nav-library" onclick="showPage('library')">
+      <span class="nav-icon">📚</span>
+      <span>Exercices</span>
+    </button>
+    <button class="nav-btn" id="nav-settings" onclick="showPage('settings')">
+      <span class="nav-icon">⚙️</span>
+      <span>Réglages</span>
+    </button>
+  </nav>
+
+</div><!-- /app -->
+
+<script src="app.js"></script>
+</body>
+</html>
