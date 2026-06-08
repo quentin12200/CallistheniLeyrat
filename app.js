@@ -554,7 +554,8 @@ function releaseWakeLock() {
 
 // Réacquérir le wake lock si la page redevient visible
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible' && inlineTimerActive()) requestWakeLock();
+  // Réacquérir le wake lock dès qu'on revient sur l'app (séance en cours ou non)
+  if (document.visibilityState === 'visible' && !isDone(dayNumber())) requestWakeLock();
 });
 
 function inlineTimerActive() {
@@ -789,7 +790,19 @@ function renderHome() {
 
   // Séance du jour
   document.getElementById('workoutTitle').textContent = w.title;
-  document.getElementById('workoutExercises').innerHTML = w.list
+
+  if (doneToday) {
+    // Affichage "fait" : liste verte avec coches
+    document.getElementById('workoutExercises').innerHTML = w.list.map(e => `
+      <div class="exercise-item exercise-item-done">
+        <div class="exercise-item-top">
+          <span class="exercise-done-check">✓</span>
+          <span class="exercise-item-label">${e}</span>
+        </div>
+      </div>`).join('');
+    document.getElementById('workoutNote').textContent = '';
+  } else {
+    document.getElementById('workoutExercises').innerHTML = w.list
     .map((e, i) => {
       // Extraire durée si chrono
       const secMatch = e.match(/(\d+)s/);
@@ -841,24 +854,25 @@ function renderHome() {
           </div>
         </div>`;
     }).join('');
-  document.getElementById('workoutNote').textContent = w.note;
+    document.getElementById('workoutNote').textContent = w.note;
+  } // fin du else (séance pas encore faite)
 
   // État séance : déjà faite ou en cours
   const doneBtn = document.getElementById('markDoneBtn');
   const feedbackSection = document.getElementById('feedbackSection');
   const seanceFinie = document.getElementById('seanceFinie');
+  const encouragementMsg = document.getElementById('encouragementMsg');
   if (doneToday) {
     doneBtn.classList.add('hidden');
     feedbackSection.classList.add('hidden');
     seanceFinie.classList.add('hidden');
-    document.getElementById('encouragementMsg').classList.remove('hidden');
-    document.getElementById('encouragementMsg').textContent = randomEncouragement();
+    encouragementMsg.classList.remove('hidden');
+    encouragementMsg.textContent = randomEncouragement();
   } else {
-    // Bouton toujours visible pour sauvegarder même sans passer par les séries
     doneBtn.classList.remove('hidden');
     feedbackSection.classList.remove('hidden');
     seanceFinie.classList.add('hidden');
-    document.getElementById('encouragementMsg').classList.add('hidden');
+    encouragementMsg.classList.add('hidden');
   }
 
   // RPG
@@ -1123,6 +1137,8 @@ function selectProfile(user) {
   }
 
   showPage('home');
+  // Garder l'écran allumé si la séance du jour n'est pas encore faite
+  if (!isDone(dayNumber())) requestWakeLock();
 }
 
 function switchProfile() {
