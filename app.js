@@ -1162,8 +1162,16 @@ function openExerciseModal(name) {
   const stars = '★'.repeat(ex.difficulty || 1) + '☆'.repeat(3 - (ex.difficulty || 1));
   const modal = document.getElementById('exerciseModal');
   document.getElementById('modalExName').textContent = name;
-  document.getElementById('modalExImg').src = ex.imagePath || '';
-  document.getElementById('modalExImg').alt = name;
+  // Encoder les espaces dans le chemin pour que le navigateur charge bien le fichier
+  const imgEl = document.getElementById('modalExImg');
+  if (ex.imagePath) {
+    imgEl.src = ex.imagePath.replace(/ /g, '%20');
+    imgEl.style.display = 'block';
+  } else {
+    imgEl.src = '';
+    imgEl.style.display = 'none';
+  }
+  imgEl.alt = name;
   document.getElementById('modalExDesc').textContent = ex.desc;
   document.getElementById('modalExDiff').textContent = stars;
   document.getElementById('modalExMuscles').innerHTML =
