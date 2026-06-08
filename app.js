@@ -563,11 +563,11 @@ function startInlineTimer(idx, secs) {
   timerEl.classList.add('visible');
 
   if (!inlineTimers[idx]) {
-    const initial = secs > 0 ? secs : 0; // 0 = pas chronométré (reps libres)
+    const initial = secs > 0 ? secs : 60;
     const targetSets = parseInt(timerEl.dataset.sets) || 3;
     inlineTimers[idx] = {
       remaining: initial, initial, interval: null, running: false,
-      targetSets, doneSets: 0, isTimed: secs > 0
+      targetSets, doneSets: 0, isTimed: true // toujours actif
     };
   }
   renderInlineTimer(idx);
@@ -790,12 +790,17 @@ function renderHome() {
 
       const goBtn = secs
         ? `<button class="exercise-start-btn" onclick="startInlineTimer(${i}, ${secs})">⏱ ${secs}s</button>`
-        : `<button class="exercise-start-btn" onclick="startInlineTimer(${i}, 0)">▶ Go</button>`;
+        : `<button class="exercise-start-btn" onclick="startInlineTimer(${i}, 60)">▶ Go</button>`;
 
-      const timerControls = secs
-        ? `<button class="inline-btn inline-btn-start" onclick="toggleInlineTimer(${i})">▶</button>
-           <button class="inline-btn inline-btn-reset" onclick="resetInlineTimer(${i})">↺</button>`
-        : ``;
+      // Toujours afficher les contrôles timer ; pour les reps, le timer sert de chrono de repos
+      const timerLabel = secs ? '' : '<span style="font-size:0.7rem;color:#888;margin-left:4px;">repos</span>';
+      const timerControls = `
+        <button class="inline-btn inline-btn-start" onclick="toggleInlineTimer(${i})">▶</button>
+        <button class="inline-btn inline-btn-reset" onclick="resetInlineTimer(${i})">↺</button>`;
+
+      const defaultDisplay = secs
+        ? (String(Math.floor(secs/60)).padStart(2,'0')+':'+String(secs%60).padStart(2,'0'))
+        : '01:00';
 
       const infoBtn = EXERCISES[exName]
         ? `<button class="exercise-info-btn" onclick="openExerciseModal('${exName.replace(/'/g, "\\'")}')">ℹ️</button>`
@@ -811,8 +816,9 @@ function renderHome() {
           <div class="exercise-inline-timer" id="inline-timer-${i}" data-sets="${targetSets}">
             <div style="display:flex;flex-direction:column;gap:8px;width:100%;">
               <div style="display:flex;align-items:center;gap:10px;">
-                <div class="inline-timer-display" id="inline-display-${i}">
-                  ${secs ? (String(Math.floor(secs/60)).padStart(2,'0')+':'+String(secs%60).padStart(2,'0')) : '—'}
+                <div style="display:flex;align-items:baseline;gap:2px;">
+                  <div class="inline-timer-display" id="inline-display-${i}">${defaultDisplay}</div>
+                  ${timerLabel}
                 </div>
                 <div class="inline-timer-controls" style="gap:6px;">
                   ${timerControls}
@@ -1162,8 +1168,16 @@ function openExerciseModal(name) {
   const stars = '★'.repeat(ex.difficulty || 1) + '☆'.repeat(3 - (ex.difficulty || 1));
   const modal = document.getElementById('exerciseModal');
   document.getElementById('modalExName').textContent = name;
-  document.getElementById('modalExImg').src = ex.imagePath || '';
-  document.getElementById('modalExImg').alt = name;
+  // Encoder les espaces dans le chemin pour que le navigateur charge bien le fichier
+  const imgEl = document.getElementById('modalExImg');
+  if (ex.imagePath) {
+    imgEl.src = ex.imagePath.replace(/ /g, '%20');
+    imgEl.style.display = 'block';
+  } else {
+    imgEl.src = '';
+    imgEl.style.display = 'none';
+  }
+  imgEl.alt = name;
   document.getElementById('modalExDesc').textContent = ex.desc;
   document.getElementById('modalExDiff').textContent = stars;
   document.getElementById('modalExMuscles').innerHTML =
