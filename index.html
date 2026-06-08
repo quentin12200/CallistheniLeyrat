@@ -86,9 +86,29 @@
         </div>
       </div>
 
-      <button id="markDoneBtn" class="btn btn-primary mt-16" onclick="handleMarkDone()">
+      <!-- Bouton masqué (remplacé par seanceFinie) -->
+      <button id="markDoneBtn" class="btn btn-primary mt-16 hidden" onclick="handleMarkDone()">
         ✓ Marquer comme fait
       </button>
+    </div>
+
+    <!-- Bloc félicitations — apparaît quand toutes les séries sont faites -->
+    <div id="seanceFinie" class="hidden">
+      <div class="seance-finie-card">
+        <div class="seance-finie-emoji" id="seanceFinieEmoji">🎉</div>
+        <div class="seance-finie-title" id="seanceFinieTitle">Séance terminée !</div>
+        <div class="seance-finie-msg" id="seanceFinieMsg"></div>
+        <div class="seance-finie-stats" id="seanceFinieStats"></div>
+        <div class="card-title mt-16">Comment c'était ?</div>
+        <div class="feedback-row">
+          <button class="feedback-btn" data-val="easy" onclick="selectFeedback('easy')">😄 Facile</button>
+          <button class="feedback-btn selected" data-val="ok" onclick="selectFeedback('ok')">👍 OK</button>
+          <button class="feedback-btn" data-val="hard" onclick="selectFeedback('hard')">😤 Dur</button>
+        </div>
+        <button class="btn btn-success mt-16" onclick="handleMarkDone()">
+          ✓ Valider la séance
+        </button>
+      </div>
     </div>
 
     <!-- Progression RPG -->
