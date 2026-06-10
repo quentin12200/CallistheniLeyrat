@@ -1180,9 +1180,9 @@ function renderHome() {
         : '';
       const isDoneEx = doneSets >= targetSets;
       return `
-        <div class="exercise-item ${isDoneEx ? 'exercise-item-done' : ''}">
+        <div class="exercise-item ${isDoneEx ? 'exercise-item-done' : ''}" onclick="openWorkoutOverlay(${i})" style="cursor:pointer;">
           <div class="exercise-item-top">
-            ${isDoneEx ? '<span class="exercise-done-check">✓</span>' : ''}
+            ${isDoneEx ? '<span class="exercise-done-check">✓</span>' : '<span class="exercise-go-arrow">▶</span>'}
             <span class="exercise-item-label">${e}</span>
             ${infoBtn}
           </div>
@@ -1953,7 +1953,7 @@ const WO_REST_DURATION = 30;
 const SVG_R = 70; // radius of SVG circle
 const SVG_CIRC = 2 * Math.PI * SVG_R;
 
-function openWorkoutOverlay() {
+function openWorkoutOverlay(startIdx = 0) {
   const today = dayNumber();
   const w = workout(today, getDiffOffset());
   if (!w.list || w.list.length === 0) return;
@@ -1967,7 +1967,16 @@ function openWorkoutOverlay() {
     const targetSets = setsMatch ? parseInt(setsMatch[1]) : 3;
     const name = e.split(' — ')[0].trim();
     const exData = EXERCISES[name] || null;
-    return { name, detail: e.split(' — ')[1] || '', duration, targetSets, imagePath: exData?.imagePath || '', desc: exData?.desc || '', tip: exData?.tip || '' };
+    return {
+      name, detail: e.split(' — ')[1] || '', duration, targetSets,
+      imagePath: exData?.imagePath || '',
+      desc: exData?.desc || '',
+      tip: exData?.tip || '',
+      muscles: exData?.muscles || [],
+      errors: exData?.errors || [],
+      variantEasy: exData?.variantEasy || '',
+      variantHard: exData?.variantHard || ''
+    };
   });
 
   woState.current = 0;
@@ -1992,6 +2001,9 @@ function openWorkoutOverlay() {
 
   // Show overlay
   document.getElementById('workoutOverlay').classList.remove('hidden');
+
+  // Navigate directly to requested exercise
+  if (startIdx > 0) woGoTo(startIdx);
   requestWakeLock();
 
   // Session clock
@@ -2050,12 +2062,13 @@ function woRenderCarousel() {
         <div class="wo-info-panel">
           <div class="wo-info-content" id="wo-info-content-${i}">
             ${ex.imagePath ? `<img src="${ex.imagePath}" class="wo-info-img" onerror="this.style.display='none'" alt="${ex.name}" />` : ''}
+            ${ex.muscles && ex.muscles.length ? `<div class="wo-muscles">${ex.muscles.map(m => `<span class="wo-muscle-tag">${m}</span>`).join('')}</div>` : ''}
             ${ex.desc ? `<p class="wo-info-desc">${ex.desc}</p>` : ''}
             ${ex.tip ? `<p class="wo-info-tip">💡 <strong>Conseil :</strong> ${ex.tip}</p>` : ''}
             ${ex.errors && ex.errors.length ? `
               <div class="wo-info-section">
                 <div class="wo-info-section-title">⚠️ Erreurs à éviter</div>
-                <ul class="wo-info-errors">${ex.errors.map(e => `<li>${e}</li>`).join('')}</ul>
+                <ul class="wo-info-errors">${ex.errors.map(err => `<li>${err}</li>`).join('')}</ul>
               </div>` : ''}
             ${(ex.variantEasy || ex.variantHard) ? `
               <div class="wo-info-section">
