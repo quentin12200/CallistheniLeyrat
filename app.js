@@ -2047,15 +2047,24 @@ function woRenderCarousel() {
           <button class="wo-play-btn" id="wo-play-btn-${i}" onclick="woToggleTimer(${i})">▶</button>
           <div class="wo-series-row" id="wo-series-row-${i}">${dots}</div>
         </div>
-        ${ex.desc || ex.imagePath ? `
         <div class="wo-info-panel">
-          <button class="wo-info-toggle" onclick="woToggleInfo(${i})">ℹ️ Aide & Conseils ▾</button>
-          <div class="wo-info-content hidden" id="wo-info-content-${i}">
+          <div class="wo-info-content" id="wo-info-content-${i}">
             ${ex.imagePath ? `<img src="${ex.imagePath}" class="wo-info-img" onerror="this.style.display='none'" alt="${ex.name}" />` : ''}
             ${ex.desc ? `<p class="wo-info-desc">${ex.desc}</p>` : ''}
-            ${ex.tip ? `<p class="wo-info-tip">💡 ${ex.tip}</p>` : ''}
+            ${ex.tip ? `<p class="wo-info-tip">💡 <strong>Conseil :</strong> ${ex.tip}</p>` : ''}
+            ${ex.errors && ex.errors.length ? `
+              <div class="wo-info-section">
+                <div class="wo-info-section-title">⚠️ Erreurs à éviter</div>
+                <ul class="wo-info-errors">${ex.errors.map(e => `<li>${e}</li>`).join('')}</ul>
+              </div>` : ''}
+            ${(ex.variantEasy || ex.variantHard) ? `
+              <div class="wo-info-section">
+                <div class="wo-info-section-title">🔄 Alternatives</div>
+                ${ex.variantEasy ? `<p class="wo-variant easy">😌 Plus facile : ${ex.variantEasy}</p>` : ''}
+                ${ex.variantHard ? `<p class="wo-variant hard">🔥 Plus difficile : ${ex.variantHard}</p>` : ''}
+              </div>` : ''}
           </div>
-        </div>` : ''}
+        </div>
       </div>`;
   }).join('');
 
@@ -2151,24 +2160,28 @@ function woTick(idx) {
         // All series done — mark exercise complete
         woMarkExerciseDone(idx);
       } else {
-        // Switch to rest phase
+        // Switch to rest phase — auto-continue
         t.phase = 'rest';
         t.remaining = WO_REST_DURATION;
+        t.running = true;
         const btn = document.getElementById('wo-play-btn-' + idx);
-        if (btn) { btn.textContent = '▶'; btn.className = 'wo-play-btn rest'; }
+        if (btn) { btn.textContent = '⏸'; btn.className = 'wo-play-btn rest'; }
         const fill = document.getElementById('wo-ring-fill-' + idx);
         if (fill) fill.classList.add('rest-phase');
         woUpdateRingDisplay(idx);
+        t.interval = setInterval(() => woTick(idx), 1000);
       }
     } else {
-      // rest done → back to work
+      // rest done → back to work — auto-continue
       t.phase = 'work';
       t.remaining = ex.duration;
+      t.running = true;
       const btn = document.getElementById('wo-play-btn-' + idx);
-      if (btn) { btn.textContent = '▶'; btn.className = 'wo-play-btn'; }
+      if (btn) { btn.textContent = '⏸'; btn.className = 'wo-play-btn'; }
       const fill = document.getElementById('wo-ring-fill-' + idx);
       if (fill) fill.classList.remove('rest-phase');
       woUpdateRingDisplay(idx);
+      t.interval = setInterval(() => woTick(idx), 1000);
     }
   }
 }
