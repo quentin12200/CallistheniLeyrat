@@ -536,22 +536,34 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 14px;
+  margin-bottom: 16px;
+  gap: 8px;
 }
 
 .cal-nav-btn {
-  background: var(--card2);
-  border: 1px solid var(--border);
-  color: var(--txt);
-  border-radius: 10px;
-  padding: 8px 14px;
-  font-size: 1rem;
+  background: var(--red);
+  border: none;
+  color: #fff;
+  border-radius: 12px;
+  padding: 10px 20px;
+  font-size: 1.2rem;
+  font-weight: 900;
   cursor: pointer;
+  flex-shrink: 0;
+  line-height: 1;
+  min-width: 48px;
+  min-height: 44px;
+  transition: opacity 0.15s, transform 0.1s;
 }
+.cal-nav-btn:active { opacity: 0.8; transform: scale(0.95); }
 
 .cal-month-label {
-  font-weight: 800;
-  font-size: 1rem;
+  font-weight: 900;
+  font-size: 1.15rem;
+  color: var(--txt);
+  text-align: center;
+  flex: 1;
+  letter-spacing: 0.02em;
 }
 
 .cal-grid {
@@ -569,18 +581,23 @@ html, body {
 }
 
 .cal-cell {
-  aspect-ratio: 1;
   border-radius: 10px;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  font-size: 0.85rem;
+  padding: 4px 2px;
+  font-size: 0.8rem;
   font-weight: 700;
+  min-height: 52px;
+  position: relative;
   cursor: pointer;
   border: 2px solid transparent;
   background: var(--card2);
   color: var(--txt2);
+  transition: transform 0.1s;
 }
+.cal-cell:active { transform: scale(0.93); }
 
 .cal-cell.empty { background: transparent; cursor: default; }
 .cal-cell.done { background: #16a34a; color: #fff; border-color: #15803d; }
@@ -717,18 +734,33 @@ html, body {
   border-radius: var(--radius);
   padding: 14px 8px;
   text-align: center;
-  border: 1px solid var(--border);
+  border: 2px solid var(--border);
   opacity: 0.35;
+  filter: grayscale(1);
+  position: relative;
 }
 
 .badge-item.unlocked {
   opacity: 1;
+  filter: none;
   border-color: var(--warn);
   background: #fffbeb;
+  box-shadow: 0 2px 8px rgba(224,123,0,0.18);
+}
+
+.badge-item.unlocked::after {
+  content: '✓';
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  font-size: 0.65rem;
+  font-weight: 900;
+  color: var(--ok);
 }
 
 .badge-icon { font-size: 2rem; }
 .badge-name { font-size: 0.72rem; color: var(--txt2); margin-top: 4px; font-weight: 700; }
+.badge-cond { font-size: 0.62rem; color: var(--txt2); margin-top: 2px; opacity: 0.7; line-height: 1.3; }
 
 /* ===== Messages encouragement ===== */
 .encouragement {
@@ -1136,23 +1168,27 @@ html, body {
 }
 
 /* ===== Feature 3 : Calendrier labels ===== */
-.cal-cell {
-  flex-direction: column;
-  gap: 1px;
-  padding: 2px;
+.cal-cell-num {
+  font-size: 0.7rem;
+  font-weight: 600;
+  position: absolute;
+  top: 3px;
+  left: 5px;
+  line-height: 1;
 }
 
 .cal-cell-label {
-  font-size: 0.52rem;
+  font-size: 0.6rem;
   font-weight: 600;
-  color: inherit;
-  opacity: 0.8;
-  line-height: 1.1;
   text-align: center;
+  margin-top: 16px;
+  opacity: 0.9;
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  padding: 0 2px;
+  line-height: 1.2;
 }
 
 /* ===== Feature 1 : Graphique progression ===== */
@@ -1164,4 +1200,325 @@ html, body {
   color: var(--txt2);
   font-weight: 700;
 }
+
+/* ===== Workout Overlay (plein écran) ===== */
+.workout-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.wo-overlay-header {
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.07);
+}
+
+.wo-back-btn {
+  background: var(--card2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  color: var(--txt);
+  flex-shrink: 0;
+}
+.wo-back-btn:active { opacity: 0.7; }
+
+.wo-progress {
+  flex: 1;
+  text-align: center;
+  font-weight: 800;
+  font-size: 0.9rem;
+  color: var(--txt2);
+}
+
+.wo-session-timer {
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  font-size: 0.9rem;
+  color: var(--red);
+  flex-shrink: 0;
+  min-width: 48px;
+  text-align: right;
+}
+
+/* Carousel */
+.wo-carousel {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+  touch-action: pan-y;
+}
+
+.wo-carousel-track {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.3s ease;
+}
+
+.wo-slide {
+  min-width: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  padding: 16px 14px 80px;
+  gap: 14px;
+}
+
+/* Main exercise zone */
+.wo-main {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid var(--border);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+
+.wo-ex-name {
+  font-size: 1.4rem;
+  font-weight: 900;
+  color: var(--txt);
+  text-align: center;
+}
+
+.wo-ex-detail {
+  font-size: 0.95rem;
+  color: var(--txt2);
+  font-weight: 700;
+}
+
+/* Timer ring */
+.wo-timer-ring {
+  position: relative;
+  width: 160px;
+  height: 160px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+}
+
+.wo-timer-ring svg {
+  position: absolute;
+  inset: 0;
+  transform: rotate(-90deg);
+}
+
+.wo-ring-bg {
+  fill: none;
+  stroke: var(--card2);
+  stroke-width: 10;
+}
+
+.wo-ring-fill {
+  fill: none;
+  stroke: var(--red);
+  stroke-width: 10;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.9s linear, stroke 0.3s;
+}
+
+.wo-ring-fill.rest-phase {
+  stroke: var(--blue);
+}
+
+.wo-timer-display {
+  font-size: 2.6rem;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  color: var(--txt);
+  line-height: 1;
+  z-index: 1;
+}
+
+.wo-timer-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--txt2);
+  z-index: 1;
+  margin-top: 2px;
+}
+
+/* Play button */
+.wo-play-btn {
+  background: var(--red);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 64px;
+  height: 64px;
+  font-size: 1.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(215,25,32,0.3);
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+.wo-play-btn:active { transform: scale(0.93); box-shadow: none; }
+.wo-play-btn.rest { background: var(--blue); box-shadow: 0 4px 16px rgba(37,99,235,0.3); }
+
+/* Series row */
+.wo-series-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.wo-serie-dot {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--card2);
+  border: 2px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 0.9rem;
+  color: var(--txt2);
+  transition: background 0.3s, border-color 0.3s, color 0.3s;
+}
+.wo-serie-dot.done { background: var(--ok); border-color: var(--ok); color: white; }
+.wo-serie-dot.current { background: var(--warn); border-color: var(--warn); color: white; }
+
+/* Slide done overlay */
+.wo-slide.slide-done .wo-main {
+  border-color: var(--ok);
+  background: #f0faf4;
+}
+.wo-slide.slide-done .wo-ex-name::after {
+  content: ' ✓';
+  color: var(--ok);
+}
+
+/* Info panel (accordion) */
+.wo-info-panel {
+  background: var(--card);
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.wo-info-toggle {
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 14px 16px;
+  text-align: left;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  color: var(--txt);
+}
+
+.wo-info-content {
+  padding: 12px 16px 16px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.wo-info-img {
+  width: 100%;
+  border-radius: 10px;
+  max-height: 160px;
+  object-fit: cover;
+  background: var(--card2);
+}
+
+.wo-info-desc {
+  font-size: 0.88rem;
+  color: var(--txt2);
+  line-height: 1.5;
+}
+
+.wo-info-tip {
+  font-size: 0.85rem;
+  color: var(--blue);
+  border-left: 2px solid var(--blue);
+  padding-left: 8px;
+  line-height: 1.5;
+}
+
+/* Dots navigation */
+.wo-dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px;
+  flex-shrink: 0;
+  background: var(--card);
+  border-top: 1px solid var(--border);
+}
+
+.wo-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--border);
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
+  border: none;
+  padding: 0;
+}
+.wo-dot.active { background: var(--red); transform: scale(1.3); }
+.wo-dot.done { background: var(--ok); }
+
+/* Completion screen */
+.wo-completion {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, #e8f7ef, #fffbeb);
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 32px 24px;
+  text-align: center;
+}
+
+.wo-completion-emoji { font-size: 4rem; }
+.wo-completion-title { font-size: 2rem; font-weight: 900; color: var(--txt); }
+.wo-completion-msg { font-size: 1rem; color: var(--txt2); line-height: 1.6; }
+
+/* Button to start full session */
+.btn-start-session {
+  background: linear-gradient(135deg, var(--red), #a01018);
+  color: white;
+  font-size: 1.1rem;
+  font-weight: 900;
+  border: none;
+  border-radius: var(--radius);
+  padding: 18px 24px;
+  width: 100%;
+  cursor: pointer;
+  margin-bottom: 10px;
+  box-shadow: 0 4px 20px rgba(215,25,32,0.3);
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+.btn-start-session:active { transform: scale(0.97); box-shadow: none; }
 
