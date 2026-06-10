@@ -1141,8 +1141,7 @@ function renderHome() {
     document.getElementById('feedbackSection').classList.add('hidden');
     document.getElementById('seanceFinie').classList.add('hidden');
     document.getElementById('encouragementMsg').classList.add('hidden');
-    // Render tomorrow card then RPG/stats, then return
-    renderTomorrowCard();
+    // RPG/stats then return
     const rpg2 = getRPGInfo();
     document.getElementById('rpgName').textContent = rpg2.name;
     document.getElementById('rpgXP').textContent = `${rpg2.xp} XP`;
@@ -1153,6 +1152,8 @@ function renderHome() {
     document.getElementById('statSessions').textContent = sessions;
     document.getElementById('statStreak').textContent = streak + ' j';
     document.getElementById('statBestStreak').textContent = getBestStreak() + ' j';
+    renderBadges();
+    renderTomorrowCard();
     return;
   }
 
@@ -1167,89 +1168,40 @@ function renderHome() {
       </div>`).join('');
     document.getElementById('workoutNote').textContent = '';
   } else {
+    // ── Bouton principal "Commencer la séance" ──
     const savedProgress = loadSeriesProgress();
-    document.getElementById('workoutExercises').innerHTML = w.list
-    .map((e, i) => {
-      // Extraire durée si chrono
-      const secMatch = e.match(/(\d+)s/);
-      const minMatch = e.match(/(\d+)\s*min/);
-      let secs = null;
-      if (secMatch) secs = parseInt(secMatch[1]);
-      else if (minMatch) secs = parseInt(minMatch[1]) * 60;
-
-      // Extraire le nombre de séries cible (ex: "3 x 15" → 3, "2 x 30s" → 2)
+    const previewItems = w.list.map((e, i) => {
+      const doneSets = savedProgress[i] || 0;
       const setsMatch = e.match(/(\d+)\s*x/);
       const targetSets = setsMatch ? parseInt(setsMatch[1]) : 3;
-
       const exName = e.split(' — ')[0].trim();
-
-      // Tous les exercices ont maintenant une durée — fallback 30s si non détecté
-      const duration = secs || 30;
-
       const infoBtn = EXERCISES[exName]
         ? `<button class="exercise-info-btn" onclick="openExerciseModal('${exName.replace(/'/g, "\\'")}')">ℹ️</button>`
         : '';
-
-      // Restaurer la progression sauvegardée
-      const doneSets = savedProgress[i] || 0;
-      const exerciseDone = doneSets >= targetSets;
-
-      if (exerciseDone) {
-        // Exercice déjà terminé : afficher en vert directement
-        return `
-          <div class="exercise-item exercise-item-done">
-            <div class="exercise-item-top">
-              <span class="exercise-done-check">✓</span>
-              <span class="exercise-item-label">${e}</span>
-              ${infoBtn}
-            </div>
-          </div>`;
-      }
-
-      const goBtn = `<button class="exercise-start-btn" onclick="startInlineTimer(${i}, ${duration})">⏱ ${duration}s</button>`;
-
-      const timerControls = `
-        <button class="inline-btn inline-btn-start" onclick="toggleInlineTimer(${i})">▶</button>
-        <button class="inline-btn inline-btn-reset" onclick="resetInlineTimer(${i})">↺</button>`;
-
-      const defaultDisplay = String(Math.floor(duration/60)).padStart(2,'0') + ':' + String(duration%60).padStart(2,'0');
-
-      const serieLabel = doneSets === 0 ? '✓ Première série !'
-        : `✓ Série ${doneSets + 1}/${targetSets}`;
-
+      const isDoneEx = doneSets >= targetSets;
       return `
-        <div class="exercise-item">
+        <div class="exercise-item ${isDoneEx ? 'exercise-item-done' : ''}">
           <div class="exercise-item-top">
+            ${isDoneEx ? '<span class="exercise-done-check">✓</span>' : ''}
             <span class="exercise-item-label">${e}</span>
             ${infoBtn}
-            ${goBtn}
-          </div>
-          <div class="exercise-inline-timer" id="inline-timer-${i}" data-sets="${targetSets}">
-            <div style="display:flex;flex-direction:column;gap:8px;width:100%;">
-              <div style="display:flex;align-items:center;gap:10px;">
-                <div class="inline-timer-display" id="inline-display-${i}">${defaultDisplay}</div>
-                <div class="inline-timer-controls" style="gap:6px;">
-                  ${timerControls}
-                </div>
-                <div class="inline-series-counter" id="inline-counter-${i}">${doneSets}/${targetSets}</div>
-              </div>
-              <button class="inline-btn inline-btn-serie" id="inline-serie-btn-${i}" onclick="recordSerie(${i})">
-                ${serieLabel}
-              </button>
-            </div>
           </div>
         </div>`;
     }).join('');
+
+    document.getElementById('workoutExercises').innerHTML = `
+      <button class="btn-start-session" onclick="openWorkoutOverlay()">▶ Commencer la séance</button>
+      ${previewItems}`;
     document.getElementById('workoutNote').textContent = w.note;
 
-    // Restaurer inlineTimers pour les exercices partiellement faits
+    // Restaurer inlineTimers pour les exercices partiellement faits (pour checkAllSeriesDone)
     w.list.forEach((e, i) => {
       const doneSets = savedProgress[i] || 0;
-      if (doneSets > 0 && !(doneSets >= (parseInt(e.match(/(\d+)\s*x/)?.[1]) || 3))) {
+      const targetSets = parseInt(e.match(/(\d+)\s*x/)?.[1]) || 3;
+      if (doneSets > 0 && doneSets < targetSets) {
         const secMatch = e.match(/(\d+)s/);
         const minMatch = e.match(/(\d+)\s*min/);
-        let secs = secMatch ? parseInt(secMatch[1]) : (minMatch ? parseInt(minMatch[1]) * 60 : 30);
-        const targetSets = parseInt(e.match(/(\d+)\s*x/)?.[1]) || 3;
+        const secs = secMatch ? parseInt(secMatch[1]) : (minMatch ? parseInt(minMatch[1]) * 60 : 30);
         inlineTimers[i] = {
           remaining: secs, initial: secs, interval: null, running: false,
           targetSets, doneSets, isTimed: true
@@ -1289,8 +1241,26 @@ function renderHome() {
   document.getElementById('statStreak').textContent = streak + ' j';
   document.getElementById('statBestStreak').textContent = getBestStreak() + ' j';
 
+  // Badges
+  renderBadges();
+
   // Feature 2: aperçu demain
   renderTomorrowCard();
+}
+
+// ─── Rendu des badges ─────────────────────────────────────────
+function renderBadges() {
+  const grid = document.getElementById('badgesGrid');
+  if (!grid) return;
+  const unlocked = checkBadges();
+  grid.innerHTML = BADGES.map(b => {
+    const earned = unlocked.includes(b.id);
+    return `
+      <div class="badge-item ${earned ? 'unlocked' : ''}">
+        <div class="badge-icon">${b.icon}</div>
+        <div class="badge-name">${b.name}</div>
+      </div>`;
+  }).join('');
 }
 
 // ─── Aperçu demain (Feature 2) ────────────────────────────────
@@ -1371,12 +1341,14 @@ function renderCalendar() {
     }
 
     // Afficher label workout/repos dans la cellule (passé, aujourd'hui, et futur)
-    let cellLabel = '';
-    if (title && !isBeforeStart) {
+    let cellContent = '';
+    if (!isBeforeStart) {
       const shortTitle = title === 'Repos' ? 'Repos' : title.split(' — ')[0].split(' / ')[0].slice(0, 10);
-      cellLabel = `<div class="cal-cell-label">${shortTitle}</div>`;
+      cellContent = `<div class="cal-cell-num">${d}</div>${shortTitle ? `<div class="cal-cell-label">${shortTitle}</div>` : ''}`;
+    } else {
+      cellContent = String(d);
     }
-    html += `<div class="${cls}" title="${title}">${d}${cellLabel}</div>`;
+    html += `<div class="${cls}" title="${title}">${cellContent}</div>`;
   }
 
   document.getElementById('calGrid').innerHTML = html;
@@ -1424,15 +1396,6 @@ function renderSettings() {
   document.getElementById('settingNotifEnabled').checked = load('notifEnabled', false);
   document.getElementById('settingObjective').value = load('objective', 'remise');
   document.getElementById('settingRythm').value = load('rythm', '5');
-  // Badges
-  const unlocked = load('badges', []);
-  document.getElementById('badgesGrid').innerHTML = BADGES.map(b => `
-    <div class="badge-item ${unlocked.includes(b.id) ? 'unlocked' : ''}">
-      <div class="badge-icon">${b.icon}</div>
-      <div class="badge-name">${b.name}</div>
-    </div>
-  `).join('');
-
   document.getElementById('rpgResetInfo').textContent =
     `${getRPGInfo().name} — ${getXP()} XP — ${countDoneSessions()} séances`;
 }
@@ -1974,6 +1937,343 @@ function checkAndFireNotificationIfDue() {
       tag: 'callistheni-reminder'
     });
   }).catch(() => {});
+}
+
+// ─── Workout Overlay (séance plein écran) ─────────────────────
+
+const woState = {
+  exercises: [],      // array of {name, detail, duration, targetSets, imagePath}
+  current: 0,
+  timers: {},         // per idx: {doneSets, running, remaining, phase:'work'|'rest', interval}
+  sessionStart: null,
+  sessionInterval: null
+};
+
+const WO_REST_DURATION = 30;
+const SVG_R = 70; // radius of SVG circle
+const SVG_CIRC = 2 * Math.PI * SVG_R;
+
+function openWorkoutOverlay() {
+  const today = dayNumber();
+  const w = workout(today, getDiffOffset());
+  if (!w.list || w.list.length === 0) return;
+
+  // Parse exercises
+  woState.exercises = w.list.map(e => {
+    const secMatch = e.match(/(\d+)s/);
+    const minMatch = e.match(/(\d+)\s*min/);
+    let duration = secMatch ? parseInt(secMatch[1]) : (minMatch ? parseInt(minMatch[1]) * 60 : 30);
+    const setsMatch = e.match(/(\d+)\s*x/);
+    const targetSets = setsMatch ? parseInt(setsMatch[1]) : 3;
+    const name = e.split(' — ')[0].trim();
+    const exData = EXERCISES[name] || null;
+    return { name, detail: e.split(' — ')[1] || '', duration, targetSets, imagePath: exData?.imagePath || '', desc: exData?.desc || '', tip: exData?.tip || '' };
+  });
+
+  woState.current = 0;
+  woState.timers = {};
+  woState.sessionStart = Date.now();
+
+  // Init timer state for each exercise
+  const savedProgress = loadSeriesProgress();
+  woState.exercises.forEach((ex, i) => {
+    const doneSets = savedProgress[i] || 0;
+    woState.timers[i] = {
+      doneSets,
+      running: false,
+      remaining: ex.duration,
+      phase: 'work',
+      interval: null
+    };
+  });
+
+  // Build carousel
+  woRenderCarousel();
+
+  // Show overlay
+  document.getElementById('workoutOverlay').classList.remove('hidden');
+  requestWakeLock();
+
+  // Session clock
+  woState.sessionInterval = setInterval(() => {
+    const elapsed = Math.floor((Date.now() - woState.sessionStart) / 1000);
+    const m = Math.floor(elapsed / 60);
+    const s = elapsed % 60;
+    const el = document.getElementById('woSessionTimer');
+    if (el) el.textContent = String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+  }, 1000);
+
+  woGoTo(0);
+  woInitSwipe();
+}
+
+function closeWorkoutOverlay() {
+  // Stop all timers
+  Object.values(woState.timers).forEach(t => { if (t && t.interval) clearInterval(t.interval); });
+  clearInterval(woState.sessionInterval);
+  woState.sessionInterval = null;
+  document.getElementById('workoutOverlay').classList.add('hidden');
+  releaseWakeLock();
+}
+
+function woRenderCarousel() {
+  const carousel = document.getElementById('woCarousel');
+  const dotsEl = document.getElementById('woDots');
+  const n = woState.exercises.length;
+
+  const slidesHTML = woState.exercises.map((ex, i) => {
+    const t = woState.timers[i];
+    const dots = Array.from({length: ex.targetSets}, (_, s) => {
+      let cls = 'wo-serie-dot';
+      if (s < t.doneSets) cls += ' done';
+      return `<div class="${cls}">${s+1}</div>`;
+    }).join('');
+
+    return `
+      <div class="wo-slide" id="wo-slide-${i}" data-idx="${i}">
+        <div class="wo-main">
+          <div class="wo-ex-name">${ex.name}</div>
+          <div class="wo-ex-detail">${ex.detail}</div>
+          <div class="wo-timer-ring" id="wo-ring-${i}">
+            <svg viewBox="0 0 160 160" width="160" height="160">
+              <circle class="wo-ring-bg" cx="80" cy="80" r="${SVG_R}" />
+              <circle class="wo-ring-fill" id="wo-ring-fill-${i}" cx="80" cy="80" r="${SVG_R}"
+                stroke-dasharray="${SVG_CIRC}"
+                stroke-dashoffset="0" />
+            </svg>
+            <div class="wo-timer-display" id="wo-timer-display-${i}">${t.remaining}</div>
+            <div class="wo-timer-label" id="wo-timer-label-${i}">Série 1/${ex.targetSets}</div>
+          </div>
+          <button class="wo-play-btn" id="wo-play-btn-${i}" onclick="woToggleTimer(${i})">▶</button>
+          <div class="wo-series-row" id="wo-series-row-${i}">${dots}</div>
+        </div>
+        ${ex.desc || ex.imagePath ? `
+        <div class="wo-info-panel">
+          <button class="wo-info-toggle" onclick="woToggleInfo(${i})">ℹ️ Aide & Conseils ▾</button>
+          <div class="wo-info-content hidden" id="wo-info-content-${i}">
+            ${ex.imagePath ? `<img src="${ex.imagePath}" class="wo-info-img" onerror="this.style.display='none'" alt="${ex.name}" />` : ''}
+            ${ex.desc ? `<p class="wo-info-desc">${ex.desc}</p>` : ''}
+            ${ex.tip ? `<p class="wo-info-tip">💡 ${ex.tip}</p>` : ''}
+          </div>
+        </div>` : ''}
+      </div>`;
+  }).join('');
+
+  carousel.innerHTML = `<div class="wo-carousel-track" id="woCarouselTrack">${slidesHTML}</div>`;
+
+  // Dots
+  dotsEl.innerHTML = Array.from({length: n}, (_, i) =>
+    `<button class="wo-dot" id="wo-dot-${i}" onclick="woGoTo(${i})"></button>`
+  ).join('');
+}
+
+function woGoTo(idx) {
+  const n = woState.exercises.length;
+  if (idx < 0 || idx >= n) return;
+  woState.current = idx;
+
+  const track = document.getElementById('woCarouselTrack');
+  if (track) track.style.transform = `translateX(-${idx * 100}%)`;
+
+  // Update progress text
+  document.getElementById('woProgress').textContent = `Exercice ${idx + 1} / ${n}`;
+
+  // Update dots
+  for (let i = 0; i < n; i++) {
+    const dot = document.getElementById('wo-dot-' + i);
+    if (!dot) continue;
+    dot.className = 'wo-dot';
+    if (woState.timers[i] && woState.timers[i].doneSets >= woState.exercises[i].targetSets) {
+      dot.classList.add('done');
+    } else if (i === idx) {
+      dot.classList.add('active');
+    }
+  }
+}
+
+// Swipe handling
+let woTouchStartX = 0;
+
+function woInitSwipe() {
+  const overlay = document.getElementById('workoutOverlay');
+  if (!overlay) return;
+  overlay.addEventListener('touchstart', e => { woTouchStartX = e.touches[0].clientX; }, { passive: true });
+  overlay.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - woTouchStartX;
+    if (Math.abs(dx) > 60) {
+      if (dx < 0) woGoTo(woState.current + 1);
+      else woGoTo(woState.current - 1);
+    }
+  }, { passive: true });
+}
+
+function woToggleTimer(idx) {
+  const t = woState.timers[idx];
+  const ex = woState.exercises[idx];
+  if (!t || !ex) return;
+
+  if (t.running) {
+    clearInterval(t.interval);
+    t.interval = null;
+    t.running = false;
+    const btn = document.getElementById('wo-play-btn-' + idx);
+    if (btn) { btn.textContent = '▶'; btn.className = 'wo-play-btn' + (t.phase === 'rest' ? ' rest' : ''); }
+  } else {
+    t.running = true;
+    const btn = document.getElementById('wo-play-btn-' + idx);
+    if (btn) { btn.textContent = '⏸'; btn.className = 'wo-play-btn' + (t.phase === 'rest' ? ' rest' : ''); }
+    t.interval = setInterval(() => woTick(idx), 1000);
+    startSessionTimer(); // also track in global session timer
+  }
+}
+
+function woTick(idx) {
+  const t = woState.timers[idx];
+  const ex = woState.exercises[idx];
+  if (!t || !ex) return;
+
+  if (t.remaining > 0) {
+    t.remaining--;
+    woUpdateRingDisplay(idx);
+  } else {
+    clearInterval(t.interval);
+    t.interval = null;
+    t.running = false;
+
+    if (t.phase === 'work') {
+      t.doneSets++;
+      if (navigator.vibrate) navigator.vibrate([300, 100, 300]);
+      playBeep();
+      saveSeriesProgress();
+      woUpdateSeriesDots(idx);
+
+      if (t.doneSets >= ex.targetSets) {
+        // All series done — mark exercise complete
+        woMarkExerciseDone(idx);
+      } else {
+        // Switch to rest phase
+        t.phase = 'rest';
+        t.remaining = WO_REST_DURATION;
+        const btn = document.getElementById('wo-play-btn-' + idx);
+        if (btn) { btn.textContent = '▶'; btn.className = 'wo-play-btn rest'; }
+        const fill = document.getElementById('wo-ring-fill-' + idx);
+        if (fill) fill.classList.add('rest-phase');
+        woUpdateRingDisplay(idx);
+      }
+    } else {
+      // rest done → back to work
+      t.phase = 'work';
+      t.remaining = ex.duration;
+      const btn = document.getElementById('wo-play-btn-' + idx);
+      if (btn) { btn.textContent = '▶'; btn.className = 'wo-play-btn'; }
+      const fill = document.getElementById('wo-ring-fill-' + idx);
+      if (fill) fill.classList.remove('rest-phase');
+      woUpdateRingDisplay(idx);
+    }
+  }
+}
+
+function woUpdateRingDisplay(idx) {
+  const t = woState.timers[idx];
+  const ex = woState.exercises[idx];
+  if (!t || !ex) return;
+
+  const disp = document.getElementById('wo-timer-display-' + idx);
+  if (disp) disp.textContent = t.remaining;
+
+  const lbl = document.getElementById('wo-timer-label-' + idx);
+  if (lbl) {
+    lbl.textContent = t.phase === 'rest'
+      ? 'Repos...'
+      : `Série ${t.doneSets + 1}/${ex.targetSets}`;
+  }
+
+  // SVG ring
+  const fill = document.getElementById('wo-ring-fill-' + idx);
+  if (fill) {
+    const total = t.phase === 'rest' ? WO_REST_DURATION : ex.duration;
+    const pct = t.remaining / total;
+    fill.style.strokeDashoffset = SVG_CIRC * (1 - pct);
+  }
+}
+
+function woUpdateSeriesDots(idx) {
+  const t = woState.timers[idx];
+  const ex = woState.exercises[idx];
+  if (!t || !ex) return;
+  const row = document.getElementById('wo-series-row-' + idx);
+  if (!row) return;
+  row.innerHTML = Array.from({length: ex.targetSets}, (_, s) => {
+    let cls = 'wo-serie-dot';
+    if (s < t.doneSets) cls += ' done';
+    else if (s === t.doneSets) cls += ' current';
+    return `<div class="${cls}">${s+1}</div>`;
+  }).join('');
+}
+
+function woMarkExerciseDone(idx) {
+  // Save progress
+  const progress = {};
+  woState.exercises.forEach((ex, i) => {
+    progress[i] = woState.timers[i]?.doneSets || 0;
+  });
+  store('series_progress_' + dayNumber(), progress);
+
+  // Visual: mark slide as done
+  const slide = document.getElementById('wo-slide-' + idx);
+  if (slide) slide.classList.add('slide-done');
+
+  // Update dots
+  woGoTo(woState.current);
+
+  // Check if all done
+  const allDone = woState.exercises.every((ex, i) =>
+    (woState.timers[i]?.doneSets || 0) >= ex.targetSets
+  );
+
+  if (allDone) {
+    setTimeout(() => woShowCompletion(), 800);
+  } else {
+    // Auto-advance to next undone exercise after 1s
+    setTimeout(() => {
+      const next = woState.exercises.findIndex((ex, i) =>
+        i > idx && (woState.timers[i]?.doneSets || 0) < ex.targetSets
+      );
+      if (next >= 0) woGoTo(next);
+    }, 1000);
+  }
+}
+
+function woShowCompletion() {
+  clearInterval(woState.sessionInterval);
+  woState.sessionInterval = null;
+
+  // Trigger existing completion logic
+  checkBadges();
+  markDone(dayNumber(), selectedFeedback);
+
+  const overlay = document.getElementById('workoutOverlay');
+  const comp = document.createElement('div');
+  comp.className = 'wo-completion';
+  const msgs = [
+    'Tu l\'as fait ! Chaque séance compte.',
+    'Bravo ! La régularité, c\'est le vrai secret.',
+    'Belle séance ! Ton futur toi te remercie.',
+  ];
+  comp.innerHTML = `
+    <div class="wo-completion-emoji">🎉</div>
+    <div class="wo-completion-title">Séance terminée !</div>
+    <div class="wo-completion-msg">${msgs[Math.floor(Math.random() * msgs.length)]}</div>
+    <button class="btn btn-success" style="width:220px;" onclick="closeWorkoutOverlay();renderHome();">✓ Valider et retourner</button>
+  `;
+  overlay.appendChild(comp);
+  if (navigator.vibrate) navigator.vibrate([100, 50, 100, 50, 300]);
+}
+
+function woToggleInfo(idx) {
+  const content = document.getElementById('wo-info-content-' + idx);
+  if (!content) return;
+  content.classList.toggle('hidden');
 }
 
 // ─── Init ─────────────────────────────────────────────────────

@@ -354,6 +354,23 @@
 
 </div><!-- /app -->
 
+<!-- ===== Overlay séance plein écran ===== -->
+<div id="workoutOverlay" class="workout-overlay hidden">
+  <div class="wo-overlay-header">
+    <button class="wo-back-btn" onclick="closeWorkoutOverlay()">← Retour</button>
+    <div class="wo-progress" id="woProgress">Exercice 1 / 1</div>
+    <div class="wo-session-timer" id="woSessionTimer">00:00</div>
+  </div>
+
+  <!-- Carrousel : une page par exercice -->
+  <div class="wo-carousel" id="woCarousel">
+    <!-- généré dynamiquement -->
+  </div>
+
+  <!-- Indicateurs de points -->
+  <div class="wo-dots" id="woDots"></div>
+</div>
+
 <script src="app.js"></script>
 </body>
 </html>
