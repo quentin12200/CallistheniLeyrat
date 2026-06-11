@@ -1975,85 +1975,155 @@ function renderDashboard() {
   const sessions = countDoneSessions();
   const streak = getStreak();
   const bestStreak = getBestStreak();
+  const today = dayNumber();
   const history = load('weightHistory', []);
 
-  const weightData = history.filter(h => h.poids).map(h => ({
-    val: h.poids,
-    label: h.date.slice(5) // MM-DD
-  }));
-  const tailleData = history.filter(h => h.taille).map(h => ({
-    val: h.taille,
-    label: h.date.slice(5)
-  }));
+  // Carte félicitations
+  let congrats = null;
+  if (streak >= 30) congrats = { icon: '👑', title: 'Incroyable !', msg: `${streak} jours consécutifs — tu es une machine !` };
+  else if (streak >= 14) congrats = { icon: '⚡', title: 'Impressionnant !', msg: `${streak} jours d'affilée, continue comme ça !` };
+  else if (streak >= 7) congrats = { icon: '🔥', title: 'En feu !', msg: `${streak} jours consécutifs — belle régularité !` };
+  else if (sessions >= 30) congrats = { icon: '💪', title: '30 séances !', msg: `Tu as déjà fait ${sessions} séances. Bravo !` };
+  else if (sessions >= 10) congrats = { icon: '🏅', title: 'En route !', msg: `${sessions} séances au compteur — tu progresses bien.` };
+  else if (sessions >= 1) congrats = { icon: '🎉', title: 'Bien démarré !', msg: `Ta première séance est faite. L'aventure commence !` };
+
+  // Calcul taux de complétion (séances faites / séances prévues depuis départ)
+  let expected = 0;
+  for (let i = 1; i <= today; i++) {
+    if (!isRestDay(i)) expected++;
+  }
+  const completionRate = expected > 0 ? Math.round((sessions / expected) * 100) : 0;
+
+  // Séances cette semaine (7 derniers jours)
+  let thisWeek = 0;
+  for (let i = Math.max(1, today - 6); i <= today; i++) {
+    if (isDone(i)) thisWeek++;
+  }
+
+  // Historique séances
+  const sessionHistory = [];
+  for (let i = today; i >= 1 && sessionHistory.length < 10; i--) {
+    if (isDone(i)) {
+      const w = workout(i);
+      sessionHistory.push({ day: i, title: w.title });
+    }
+  }
+
+  // Poids
+  const weightData = history.filter(h => h.poids).slice(-20).map(h => ({ val: h.poids, label: h.date.slice(5) }));
+  const latestWeight = weightData.length > 0 ? weightData[weightData.length - 1].val : null;
+  const initWeight = load('initWeight');
+  const weightDelta = (latestWeight && initWeight) ? (latestWeight - initWeight).toFixed(1) : null;
+
+  // Unlocked badges
+  const unlockedBadges = checkBadges();
 
   document.getElementById('dashContent').innerHTML = `
+
+    ${congrats ? `
+    <div class="dash-congrats">
+      <div class="dash-congrats-icon">${congrats.icon}</div>
+      <div>
+        <div class="dash-congrats-title">${congrats.title}</div>
+        <div class="dash-congrats-msg">${congrats.msg}</div>
+      </div>
+    </div>` : ''}
+
+    <!-- RPG Card -->
+    <div class="card dash-rpg-card">
+      <div class="dash-rpg-header">
+        <div>
+          <div class="dash-rpg-level">${rpg.name}</div>
+          <div class="dash-rpg-xp">${rpg.xp} XP${rpg.next ? ` · encore ${rpg.xpToNext} XP pour ${rpg.next}` : ' · Niveau max 👑'}</div>
+        </div>
+        <div class="dash-rpg-badge">${rpg.lvl + 1}</div>
+      </div>
+      <div class="dash-rpg-bar-wrap"><div class="dash-rpg-bar-fill" style="width:${rpg.pct}%"></div></div>
+      <div class="dash-rpg-pct">${rpg.pct}%</div>
+    </div>
+
+    <!-- Stats grid -->
+    <div class="dash-stats-grid">
+      <div class="dash-stat-card">
+        <div class="dash-stat-icon">🏋️</div>
+        <div class="dash-stat-val">${sessions}</div>
+        <div class="dash-stat-label">Séances totales</div>
+      </div>
+      <div class="dash-stat-card">
+        <div class="dash-stat-icon">🔥</div>
+        <div class="dash-stat-val">${streak}</div>
+        <div class="dash-stat-label">Série actuelle</div>
+      </div>
+      <div class="dash-stat-card">
+        <div class="dash-stat-icon">⭐</div>
+        <div class="dash-stat-val">${bestStreak}</div>
+        <div class="dash-stat-label">Record</div>
+      </div>
+      <div class="dash-stat-card">
+        <div class="dash-stat-icon">📅</div>
+        <div class="dash-stat-val">${thisWeek}</div>
+        <div class="dash-stat-label">Cette semaine</div>
+      </div>
+      <div class="dash-stat-card">
+        <div class="dash-stat-icon">🎯</div>
+        <div class="dash-stat-val">${completionRate}%</div>
+        <div class="dash-stat-label">Complétion</div>
+      </div>
+      <div class="dash-stat-card">
+        <div class="dash-stat-icon">📆</div>
+        <div class="dash-stat-val">J${today}</div>
+        <div class="dash-stat-label">Jour programme</div>
+      </div>
+    </div>
+
+    <!-- Progression 4 semaines -->
     <div class="card">
-      <div class="card-title">📈 Progression — 4 dernières semaines</div>
+      <div class="card-title">📈 4 dernières semaines</div>
       <canvas id="progressionChart" width="320" height="110" style="width:100%;height:110px;border-radius:8px;display:block;"></canvas>
       <div class="progression-week-labels" id="progressionWeekLabels"></div>
     </div>
 
+    ${latestWeight ? `
     <div class="card">
-      <div class="card-title">Statistiques</div>
-      <div class="stat-row"><span class="stat-label">Séances totales</span><span class="stat-value">${sessions}</span></div>
-      <div class="stat-row"><span class="stat-label">Série actuelle</span><span class="stat-value">${streak} j</span></div>
-      <div class="stat-row"><span class="stat-label">Meilleure série</span><span class="stat-value">${bestStreak} j</span></div>
-      <div class="stat-row"><span class="stat-label">XP total</span><span class="stat-value">${rpg.xp} XP</span></div>
-      <div class="stat-row"><span class="stat-label">Niveau RPG</span><span class="stat-value">${rpg.name}</span></div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">Ajouter une mesure</div>
-      <div class="settings-group">
-        <div class="settings-label">Date</div>
-        <input type="date" id="inputWeightDate" class="settings-field" value="${new Date().toISOString().slice(0,10)}" />
+      <div class="card-title">⚖️ Poids</div>
+      <div class="dash-weight-row">
+        <div class="dash-weight-val">${latestWeight} kg</div>
+        ${weightDelta !== null ? `<div class="dash-weight-delta ${parseFloat(weightDelta) <= 0 ? 'neg' : 'pos'}">${parseFloat(weightDelta) > 0 ? '+' : ''}${weightDelta} kg</div>` : ''}
       </div>
-      <div class="settings-group">
-        <div class="settings-label">Poids (kg)</div>
-        <input type="number" id="inputWeightVal" class="settings-field" step="0.1" min="30" max="300" placeholder="ex: 72.5" />
-      </div>
-      <div class="settings-group">
-        <div class="settings-label">Tour de taille (cm)</div>
-        <input type="number" id="inputTailleVal" class="settings-field" step="0.5" min="40" max="200" placeholder="ex: 85.0" />
-      </div>
-      <div class="settings-group">
-        <div class="settings-label">Note (optionnel)</div>
-        <input type="text" id="inputWeightNote" class="settings-field" placeholder="ex: Après le repas" />
-      </div>
-      <button class="btn btn-primary mt-8" onclick="handleSaveMeasure()">Ajouter mesure</button>
-    </div>
+      ${weightData.length > 1 ? `<canvas id="weightChart" width="320" height="140" style="width:100%;height:140px;border-radius:8px;margin-top:12px;"></canvas>` : ''}
+    </div>` : ''}
 
+    <!-- Historique séances -->
+    ${sessionHistory.length > 0 ? `
     <div class="card">
-      <div class="card-title">Évolution du poids (kg)</div>
-      ${weightData.length > 0
-        ? `<canvas id="weightChart" width="320" height="160" style="width:100%;height:160px;border-radius:8px;"></canvas>`
-        : `<div class="text-muted" style="text-align:center;padding:20px 0;">Aucune donnée de poids enregistrée.</div>`}
-    </div>
-
-    <div class="card">
-      <div class="card-title">Évolution du tour de taille (cm)</div>
-      ${tailleData.length > 0
-        ? `<canvas id="tailleChart" width="320" height="160" style="width:100%;height:160px;border-radius:8px;"></canvas>`
-        : `<div class="text-muted" style="text-align:center;padding:20px 0;">Aucune donnée de tour de taille enregistrée.</div>`}
-    </div>
-
-    ${history.length > 0 ? `
-    <div class="card">
-      <div class="card-title">Historique</div>
-      ${history.slice().reverse().slice(0, 10).map(h => `
-        <div class="stat-row">
-          <span class="stat-label">${h.date}${h.note ? ' — ' + h.note : ''}</span>
-          <span class="stat-value">${h.poids ? h.poids + ' kg' : ''}${h.poids && h.taille ? ' / ' : ''}${h.taille ? h.taille + ' cm' : ''}</span>
+      <div class="card-title">📋 Dernières séances</div>
+      ${sessionHistory.map(s => `
+        <div class="dash-session-row">
+          <span class="dash-session-check">✓</span>
+          <span class="dash-session-label">Jour ${s.day} — ${s.title}</span>
         </div>
       `).join('')}
     </div>` : ''}
+
+    <!-- Badges -->
+    <div class="card">
+      <div class="card-title">🏅 Succès (${unlockedBadges.length}/${BADGES.length})</div>
+      <div class="badges-grid">
+        ${BADGES.map(b => {
+          const earned = unlockedBadges.includes(b.id);
+          return `<div class="badge-item ${earned ? 'unlocked' : ''}">
+            <div class="badge-icon">${b.icon}</div>
+            <div class="badge-name">${b.name}</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+
   `;
 
-  // Dessiner les graphiques après rendu DOM
   requestAnimationFrame(() => {
     drawProgressionChart();
-    if (weightData.length > 0) drawWeightChart('weightChart', weightData, 'poids', '#d71920');
-    if (tailleData.length > 0) drawWeightChart('tailleChart', tailleData, 'tour de taille', '#2563eb');
+    if (weightData.length > 1) drawWeightChart('weightChart', weightData, 'poids', '#d71920');
   });
 }
 

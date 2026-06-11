@@ -970,6 +970,74 @@ html, body {
 
 .mt-12 { margin-top: 12px; }
 
+/* ===== Dashboard Stats ===== */
+.dash-congrats {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: linear-gradient(135deg, #fffbeb, #fef9c3);
+  border: 1.5px solid #fde68a;
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 14px;
+}
+.dash-congrats-icon { font-size: 2.2rem; flex-shrink: 0; }
+.dash-congrats-title { font-size: 1rem; font-weight: 900; color: #92400e; }
+.dash-congrats-msg { font-size: 0.85rem; color: #a16207; margin-top: 2px; }
+
+.dash-rpg-card {
+  background: linear-gradient(135deg, #1a1a2e, #16213e);
+  color: #fff;
+  border: none;
+}
+.dash-rpg-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.dash-rpg-level { font-size: 1.2rem; font-weight: 900; }
+.dash-rpg-xp { font-size: 0.78rem; color: rgba(255,255,255,0.6); margin-top: 3px; }
+.dash-rpg-badge {
+  width: 44px; height: 44px; border-radius: 50%;
+  background: var(--red); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.2rem; font-weight: 900;
+  box-shadow: 0 2px 8px rgba(215,25,32,0.4);
+}
+.dash-rpg-bar-wrap { background: rgba(255,255,255,0.15); border-radius: 999px; height: 8px; overflow: hidden; margin-bottom: 4px; }
+.dash-rpg-bar-fill { background: var(--red); height: 100%; border-radius: 999px; transition: width 0.6s ease; }
+.dash-rpg-pct { font-size: 0.72rem; color: rgba(255,255,255,0.5); text-align: right; }
+
+.dash-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.dash-stat-card {
+  background: var(--card);
+  border-radius: 14px;
+  padding: 14px 8px;
+  text-align: center;
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 6px rgba(0,0,0,0.04);
+}
+.dash-stat-icon { font-size: 1.3rem; margin-bottom: 4px; }
+.dash-stat-val { font-size: 1.25rem; font-weight: 900; color: var(--txt); line-height: 1; }
+.dash-stat-label { font-size: 0.62rem; color: var(--txt2); font-weight: 600; margin-top: 3px; text-transform: uppercase; letter-spacing: 0.04em; }
+
+.dash-weight-row { display: flex; align-items: baseline; gap: 10px; padding: 4px 0 8px; }
+.dash-weight-val { font-size: 2rem; font-weight: 900; color: var(--txt); }
+.dash-weight-delta { font-size: 1rem; font-weight: 800; padding: 3px 10px; border-radius: 999px; }
+.dash-weight-delta.neg { background: #dcfce7; color: #166534; }
+.dash-weight-delta.pos { background: #fee2e2; color: #991b1b; }
+
+.dash-session-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.9rem;
+}
+.dash-session-row:last-child { border-bottom: none; }
+.dash-session-check { color: var(--ok); font-weight: 900; font-size: 1rem; flex-shrink: 0; }
+.dash-session-label { color: var(--txt); }
+
 /* ===== Badges ===== */
 .badges-grid {
   display: grid;
