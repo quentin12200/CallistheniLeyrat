@@ -2094,8 +2094,8 @@ function woGoTo(idx) {
   if (idx < 0 || idx >= n) return;
   woState.current = idx;
 
-  const track = document.getElementById('woCarouselTrack');
-  if (track) track.style.transform = `translateX(-${idx * 100}%)`;
+  const carousel = document.getElementById('woCarousel');
+  if (carousel) carousel.scrollTo({ left: idx * carousel.offsetWidth, behavior: 'smooth' });
 
   // Update progress text
   document.getElementById('woProgress').textContent = `Exercice ${idx + 1} / ${n}`;
@@ -2117,22 +2117,25 @@ function woGoTo(idx) {
 let woTouchStartX = 0;
 
 function woInitSwipe() {
-  const overlay = document.getElementById('workoutOverlay');
-  if (!overlay) return;
-  let startX = 0, startY = 0;
-  overlay.addEventListener('touchstart', e => {
-    startX = e.touches[0].clientX;
-    startY = e.touches[0].clientY;
-  }, { passive: true });
-  overlay.addEventListener('touchend', e => {
-    const dx = e.changedTouches[0].clientX - startX;
-    const dy = e.changedTouches[0].clientY - startY;
-    // Ne swipe que si le geste est majoritairement horizontal
-    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) {
-      if (dx < 0) woGoTo(woState.current + 1);
-      else woGoTo(woState.current - 1);
+  // Le scroll snap CSS gère le swipe nativement.
+  // On écoute juste scrollend pour mettre à jour l'état courant et les dots.
+  const carousel = document.getElementById('woCarousel');
+  if (!carousel) return;
+  const onScroll = () => {
+    const idx = Math.round(carousel.scrollLeft / carousel.offsetWidth);
+    if (idx !== woState.current && idx >= 0 && idx < woState.exercises.length) {
+      woState.current = idx;
+      document.getElementById('woProgress').textContent = `Exercice ${idx + 1} / ${woState.exercises.length}`;
+      for (let i = 0; i < woState.exercises.length; i++) {
+        const dot = document.getElementById('wo-dot-' + i);
+        if (!dot) continue;
+        dot.className = 'wo-dot';
+        if (woState.timers[i] && woState.timers[i].doneSets >= woState.exercises[i].targetSets) dot.classList.add('done');
+        else if (i === idx) dot.classList.add('active');
+      }
     }
-  }, { passive: true });
+  };
+  carousel.addEventListener('scroll', onScroll, { passive: true });
 }
 
 function woToggleTimer(idx) {
