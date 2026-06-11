@@ -432,6 +432,107 @@ function cancelPin() {
   document.getElementById('profileScreen').classList.remove('hidden');
 }
 
+// ─── Création de profil personnalisé ─────────────────────────
+function loadCustomProfiles() {
+  return JSON.parse(localStorage.getItem('customProfiles') || '[]');
+}
+
+function saveCustomProfiles(list) {
+  localStorage.setItem('customProfiles', JSON.stringify(list));
+}
+
+function renderCustomProfiles() {
+  const list = loadCustomProfiles();
+  const container = document.getElementById('customProfileCards');
+  if (!container) return;
+  if (list.length === 0) { container.style.display = 'none'; return; }
+  container.style.display = 'flex';
+  container.innerHTML = list.map(p => {
+    const letter = p.name.charAt(0).toUpperCase();
+    const color = p.color || '#888';
+    return `
+      <button class="profile-btn" onclick="startProfileLogin('${p.id}')">
+        <div class="profile-avatar custom" style="background:${color}20;color:${color};">${letter}</div>
+        <div class="profile-name">${p.name}</div>
+      </button>`;
+  }).join('');
+}
+
+function showCreateProfile() {
+  document.getElementById('profileScreen').classList.add('hidden');
+  document.getElementById('createProfileScreen').classList.remove('hidden');
+  document.getElementById('createProfileName').value = '';
+  document.getElementById('createProfilePin').value = '';
+  document.getElementById('createProfileError').classList.add('hidden');
+  document.getElementById('createProfileLoading').classList.add('hidden');
+  document.getElementById('createProfileBtn').disabled = true;
+  document.getElementById('createProfileName').focus();
+}
+
+function cancelCreateProfile() {
+  document.getElementById('createProfileScreen').classList.add('hidden');
+  document.getElementById('profileScreen').classList.remove('hidden');
+}
+
+function onCreateProfileInput() {
+  const name = document.getElementById('createProfileName').value.trim();
+  const pin = document.getElementById('createProfilePin').value;
+  document.getElementById('createProfileBtn').disabled = !(name.length >= 2 && pin.length >= 4);
+  document.getElementById('createProfileError').classList.add('hidden');
+}
+
+const AVATAR_COLORS = ['#e53e3e','#dd6b20','#38a169','#3182ce','#805ad5','#d53f8c','#00b5d8'];
+
+async function submitCreateProfile() {
+  const name = document.getElementById('createProfileName').value.trim();
+  const pin = document.getElementById('createProfilePin').value;
+  if (!name || pin.length < 4) return;
+
+  const userId = name.toLowerCase().replace(/[^a-z0-9]/g, '');
+  if (!userId) {
+    document.getElementById('createProfileError').textContent = 'Prénom invalide (utilise des lettres)';
+    document.getElementById('createProfileError').classList.remove('hidden');
+    return;
+  }
+
+  document.getElementById('createProfileBtn').disabled = true;
+  document.getElementById('createProfileLoading').classList.remove('hidden');
+  document.getElementById('createProfileError').classList.add('hidden');
+
+  try {
+    const res = await fetch(SYNC_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'register', user: userId, pin }),
+    });
+    const json = await res.json();
+    document.getElementById('createProfileLoading').classList.add('hidden');
+
+    if (json.ok) {
+      // Sauvegarder le profil localement
+      const color = AVATAR_COLORS[loadCustomProfiles().length % AVATAR_COLORS.length];
+      const list = loadCustomProfiles();
+      list.push({ id: userId, name, color });
+      saveCustomProfiles(list);
+      // Mémoriser le PIN sur cet appareil
+      localStorage.setItem(userId + '_pin', pin);
+      // Retour à l'écran de profil
+      document.getElementById('createProfileScreen').classList.add('hidden');
+      document.getElementById('profileScreen').classList.remove('hidden');
+      renderCustomProfiles();
+    } else {
+      document.getElementById('createProfileError').textContent = json.error || 'Erreur — réessaie';
+      document.getElementById('createProfileError').classList.remove('hidden');
+      document.getElementById('createProfileBtn').disabled = false;
+    }
+  } catch (e) {
+    document.getElementById('createProfileLoading').classList.add('hidden');
+    document.getElementById('createProfileError').textContent = 'Hors-ligne — impossible de créer le profil';
+    document.getElementById('createProfileError').classList.remove('hidden');
+    document.getElementById('createProfileBtn').disabled = false;
+  }
+}
+
 async function submitPin() {
   const user = _pendingUser;
   const pin = document.getElementById('pinInput').value;
@@ -2319,11 +2420,12 @@ function init() {
   }
 
   migrateOldData();
+  renderCustomProfiles();
 
   // Reprendre le dernier profil si disponible
   const last = localStorage.getItem('lastUser');
-  if (last === 'quentin' || last === 'sophie') {
-    // startProfileLogin vérifie si le PIN est déjà mémorisé sur cet appareil
+  const customIds = loadCustomProfiles().map(p => p.id);
+  if (last && (last === 'quentin' || last === 'sophie' || customIds.includes(last))) {
     startProfileLogin(last);
   }
 }
