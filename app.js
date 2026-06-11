@@ -1222,9 +1222,36 @@ function renderHome() {
   const doneToday = isDone(today);
 
   // Jour / cycle
-  document.getElementById('heroDay').textContent = today;
+  document.getElementById('heroDay').textContent = `Jour ${today}`;
   document.getElementById('heroCycle').textContent = `Cycle ${cycleNumber(today)}`;
   document.getElementById('heroLabel').textContent = w.title;
+
+  // Hero chips (exercices ou repos)
+  const chipsEl = document.getElementById('heroChips');
+  if (chipsEl) {
+    if (w.isRest) {
+      chipsEl.innerHTML = `<span class="day-hero-rest-chip">🛌 Repos</span>`;
+    } else {
+      chipsEl.innerHTML = w.list.map(e => {
+        const name = e.split(' — ')[0].trim();
+        return `<span class="day-hero-chip">${name}</span>`;
+      }).join('');
+    }
+  }
+
+  // Hero launch button
+  const heroBtn = document.getElementById('heroLaunchBtn');
+  if (heroBtn) {
+    if (w.isRest || isDone(today)) {
+      heroBtn.textContent = w.isRest ? '🛌 Jour de repos' : '✓ Séance complète';
+      heroBtn.classList.add('done');
+      heroBtn.onclick = null;
+    } else {
+      heroBtn.innerHTML = '▶ Lancer la séance';
+      heroBtn.classList.remove('done');
+      heroBtn.onclick = () => openWorkoutOverlay();
+    }
+  }
 
   // Séance du jour
   document.getElementById('workoutTitle').textContent = w.title;
@@ -1247,12 +1274,18 @@ function renderHome() {
     document.getElementById('rpgName').textContent = rpg2.name;
     document.getElementById('rpgXP').textContent = `${rpg2.xp} XP`;
     document.getElementById('rpgBar').style.width = rpg2.pct + '%';
-    document.getElementById('rpgNext').textContent = rpg2.next
+    if (document.getElementById('rpgNext')) document.getElementById('rpgNext').textContent = rpg2.next
       ? `Prochain niveau : ${rpg2.next} (encore ${rpg2.xpToNext} XP)`
       : 'Niveau maximum atteint — tu es un Maître ! 👑';
+    const heroRpgName = document.getElementById('heroRpgName');
+    const heroRpgXP = document.getElementById('heroRpgXP');
+    const heroRpgBar = document.getElementById('heroRpgBar');
+    if (heroRpgName) heroRpgName.textContent = rpg2.name;
+    if (heroRpgXP) heroRpgXP.textContent = `${rpg2.xp} XP`;
+    if (heroRpgBar) heroRpgBar.style.width = rpg2.pct + '%';
     document.getElementById('statSessions').textContent = sessions;
-    document.getElementById('statStreak').textContent = streak + ' j';
-    document.getElementById('statBestStreak').textContent = getBestStreak() + ' j';
+    document.getElementById('statStreak').textContent = streak;
+    document.getElementById('statBestStreak').textContent = getBestStreak();
     renderBadges();
     renderTomorrowCard();
     return;
@@ -1290,9 +1323,7 @@ function renderHome() {
         </div>`;
     }).join('');
 
-    document.getElementById('workoutExercises').innerHTML = `
-      <button class="btn-start-session" onclick="openWorkoutOverlay()">▶ Commencer la séance</button>
-      ${previewItems}`;
+    document.getElementById('workoutExercises').innerHTML = previewItems;
     document.getElementById('workoutNote').textContent = w.note;
 
     // Restaurer inlineTimers pour les exercices partiellement faits (pour checkAllSeriesDone)
@@ -1333,9 +1364,15 @@ function renderHome() {
   document.getElementById('rpgName').textContent = rpg.name;
   document.getElementById('rpgXP').textContent = `${rpg.xp} XP`;
   document.getElementById('rpgBar').style.width = rpg.pct + '%';
-  document.getElementById('rpgNext').textContent = rpg.next
+  if (document.getElementById('rpgNext')) document.getElementById('rpgNext').textContent = rpg.next
     ? `Prochain niveau : ${rpg.next} (encore ${rpg.xpToNext} XP)`
     : 'Niveau maximum atteint — tu es un Maître ! 👑';
+  const heroRpgName2 = document.getElementById('heroRpgName');
+  const heroRpgXP2 = document.getElementById('heroRpgXP');
+  const heroRpgBar2 = document.getElementById('heroRpgBar');
+  if (heroRpgName2) heroRpgName2.textContent = rpg.name;
+  if (heroRpgXP2) heroRpgXP2.textContent = `${rpg.xp} XP`;
+  if (heroRpgBar2) heroRpgBar2.style.width = rpg.pct + '%';
 
   // Stats rapides
   document.getElementById('statSessions').textContent = sessions;
@@ -2053,6 +2090,8 @@ const woState = {
 const WO_REST_DURATION = 30;
 const SVG_R = 70; // radius of SVG circle
 const SVG_CIRC = 2 * Math.PI * SVG_R;
+
+function launchTodayWorkout() { openWorkoutOverlay(0); }
 
 function openWorkoutOverlay(startIdx = 0) {
   const today = dayNumber();
