@@ -280,64 +280,149 @@
   <div id="page-settings" class="page">
     <div class="section-title">⚙️ Réglages</div>
 
+    <!-- Programme -->
+    <div class="settings-section-header">🗓 Programme</div>
     <div class="card">
-      <div class="card-title">Programme</div>
-
-      <div class="settings-group">
-        <div class="settings-label">Date de départ</div>
-        <input type="date" id="settingStartDate" class="settings-field" />
+      <div class="settings-row">
+        <div class="settings-row-label">
+          <span class="settings-row-title">Date de départ</span>
+          <span class="settings-row-hint">Détermine ton jour actuel dans le programme</span>
+        </div>
+        <input type="date" id="settingStartDate" class="settings-field-inline" />
       </div>
 
-      <div class="settings-group">
-        <div class="settings-label">Niveau de départ</div>
-        <select id="settingLevel" class="settings-field">
-          <option value="facile">Reprise tranquille</option>
+      <div class="settings-divider"></div>
+
+      <div class="settings-row">
+        <div class="settings-row-label">
+          <span class="settings-row-title">Niveau</span>
+          <span class="settings-row-hint">Intensité des exercices proposés</span>
+        </div>
+        <select id="settingLevel" class="settings-field-inline">
+          <option value="facile">Débutant</option>
           <option value="normal">Normal</option>
-          <option value="fort">Déjà à l'aise</option>
+          <option value="fort">Avancé</option>
         </select>
       </div>
 
-      <div class="settings-group">
-        <div class="settings-label">Objectif</div>
-        <select id="settingObjective" class="settings-field">
+      <div class="settings-divider"></div>
+
+      <div class="settings-row">
+        <div class="settings-row-label">
+          <span class="settings-row-title">Objectif</span>
+          <span class="settings-row-hint">Oriente les conseils et la progression</span>
+        </div>
+        <select id="settingObjective" class="settings-field-inline">
           <option value="poids">Perte de poids</option>
           <option value="remise">Remise en forme</option>
-          <option value="muscu">Renforcement musculaire</option>
+          <option value="muscu">Renforcement</option>
           <option value="endurance">Endurance</option>
         </select>
       </div>
 
-      <div class="settings-group">
-        <div class="settings-label">Rythme hebdomadaire</div>
-        <select id="settingRythm" class="settings-field">
-          <option value="3">3 jours / semaine</option>
-          <option value="4">4 jours / semaine</option>
-          <option value="5">5 jours / semaine</option>
+      <div class="settings-divider"></div>
+
+      <div class="settings-row">
+        <div class="settings-row-label">
+          <span class="settings-row-title">Rythme</span>
+          <span class="settings-row-hint">Jours d'entraînement par semaine</span>
+        </div>
+        <select id="settingRythm" class="settings-field-inline">
+          <option value="3">3 j / sem</option>
+          <option value="4">4 j / sem</option>
+          <option value="5">5 j / sem</option>
           <option value="7">Quotidien</option>
         </select>
       </div>
     </div>
 
+    <!-- Corps -->
+    <div class="settings-section-header">⚖️ Mon corps</div>
     <div class="card">
-      <div class="card-title">Notifications</div>
-
-      <div class="settings-group" style="display:flex;justify-content:space-between;align-items:center;">
-        <div class="settings-label" style="margin-bottom:0;">Activer les rappels</div>
-        <input type="checkbox" id="settingNotifEnabled" style="width:20px;height:20px;cursor:pointer;" />
+      <div class="settings-row">
+        <div class="settings-row-label">
+          <span class="settings-row-title">Taille (cm)</span>
+          <span class="settings-row-hint">Utilisé pour calculer l'IMC</span>
+        </div>
+        <input type="number" id="settingBodyHeight" class="settings-field-inline" min="100" max="250" step="1" placeholder="ex: 178" style="width:90px;" />
       </div>
 
-      <div class="settings-group mt-8">
-        <div class="settings-label">Heure de rappel</div>
-        <input type="time" id="settingNotifTime" class="settings-field" />
+      <div class="settings-divider"></div>
+
+      <div class="settings-row">
+        <div class="settings-row-label">
+          <span class="settings-row-title">Poids initial (kg)</span>
+          <span class="settings-row-hint">Point de départ pour suivre ta progression</span>
+        </div>
+        <input type="number" id="settingInitWeight" class="settings-field-inline" min="30" max="300" step="0.1" placeholder="ex: 75.0" style="width:90px;" />
       </div>
     </div>
 
+    <!-- Ajouter une mesure -->
+    <div class="settings-section-header">📏 Ajouter une mesure</div>
     <div class="card">
-      <div class="card-title">Ton profil RPG</div>
-      <div class="text-muted" id="rpgResetInfo"></div>
+      <div class="settings-row">
+        <div class="settings-row-label">
+          <span class="settings-row-title">Date</span>
+        </div>
+        <input type="date" id="quickMeasureDate" class="settings-field-inline" />
+      </div>
+      <div class="settings-divider"></div>
+      <div class="settings-row">
+        <div class="settings-row-label">
+          <span class="settings-row-title">Poids (kg)</span>
+        </div>
+        <input type="number" id="quickMeasureWeight" class="settings-field-inline" step="0.1" min="30" max="300" placeholder="72.5" style="width:90px;" />
+      </div>
+      <div class="settings-divider"></div>
+      <div class="settings-row">
+        <div class="settings-row-label">
+          <span class="settings-row-title">Tour de taille (cm)</span>
+        </div>
+        <input type="number" id="quickMeasureTaille" class="settings-field-inline" step="0.5" min="40" max="200" placeholder="85" style="width:90px;" />
+      </div>
+      <div class="settings-divider"></div>
+      <div class="settings-row">
+        <div class="settings-row-label">
+          <span class="settings-row-title">Note</span>
+        </div>
+        <input type="text" id="quickMeasureNote" class="settings-field-inline" placeholder="optionnel" style="width:130px;" />
+      </div>
+      <button class="btn btn-secondary mt-12" onclick="handleQuickMeasure()" style="width:100%;">+ Enregistrer la mesure</button>
     </div>
 
-    <button class="btn btn-primary mt-16" onclick="saveSettings()">Enregistrer</button>
+    <!-- Notifications -->
+    <div class="settings-section-header">🔔 Notifications</div>
+    <div class="card">
+      <div class="settings-row">
+        <div class="settings-row-label">
+          <span class="settings-row-title">Activer les rappels</span>
+          <span class="settings-row-hint">Notification quotidienne pour t'entraîner</span>
+        </div>
+        <label class="settings-toggle">
+          <input type="checkbox" id="settingNotifEnabled" />
+          <span class="settings-toggle-track"></span>
+        </label>
+      </div>
+
+      <div class="settings-divider"></div>
+
+      <div class="settings-row">
+        <div class="settings-row-label">
+          <span class="settings-row-title">Heure du rappel</span>
+        </div>
+        <input type="time" id="settingNotifTime" class="settings-field-inline" />
+      </div>
+    </div>
+
+    <!-- Profil -->
+    <div class="settings-section-header">🏆 Profil RPG</div>
+    <div class="card">
+      <div class="settings-rpg-info" id="rpgResetInfo"></div>
+    </div>
+
+    <button class="btn btn-primary mt-16" style="width:100%;" onclick="saveSettings()">Enregistrer les réglages</button>
+    <div style="height:24px;"></div>
   </div><!-- /page-settings -->
 
   <!-- ── Navigation bas ── -->
