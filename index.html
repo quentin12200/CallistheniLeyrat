@@ -28,12 +28,40 @@
       <div class="profile-name">Sophie</div>
     </button>
   </div>
+  <!-- Profils personnalisés (générés par JS) -->
+  <div class="profile-cards" id="customProfileCards" style="display:none;"></div>
+
   <div class="guest-separator">— ou —</div>
   <button class="profile-btn profile-btn-guest" onclick="selectProfile('invite')">
     <div class="profile-avatar guest">👤</div>
     <div class="profile-name">Invité</div>
     <div class="guest-note">Pour tester l'app — tes données restent sur ce téléphone</div>
   </button>
+  <button class="profile-btn profile-btn-create" onclick="showCreateProfile()">
+    <div class="profile-avatar create">＋</div>
+    <div class="profile-name">Nouveau profil</div>
+    <div class="guest-note">Créer un profil avec code PIN</div>
+  </button>
+</div>
+
+<!-- ===== Écran création de profil ===== -->
+<div id="createProfileScreen" class="hidden">
+  <div class="pin-card">
+    <div class="pin-avatar create" style="font-size:2rem;">＋</div>
+    <div class="pin-title">Créer un profil</div>
+    <div class="pin-subtitle">Choisis un prénom et un code PIN à 4-6 chiffres</div>
+    <input type="text" id="createProfileName" class="pin-input" placeholder="Ton prénom" maxlength="20"
+      autocomplete="off" oninput="onCreateProfileInput()" style="margin-bottom:10px;" />
+    <input type="password" id="createProfilePin" class="pin-input" inputmode="numeric"
+      placeholder="Code PIN (4-6 chiffres)" maxlength="6" autocomplete="off"
+      oninput="onCreateProfileInput()" onkeydown="if(event.key==='Enter')submitCreateProfile()" />
+    <div id="createProfileError" class="pin-error hidden"></div>
+    <div id="createProfileLoading" class="pin-loading hidden">Création en cours…</div>
+    <div class="pin-buttons">
+      <button class="btn btn-secondary" onclick="cancelCreateProfile()">Annuler</button>
+      <button class="btn btn-primary" id="createProfileBtn" onclick="submitCreateProfile()" disabled>Créer</button>
+    </div>
+  </div>
 </div>
 
 <!-- ===== Écran saisie PIN ===== -->

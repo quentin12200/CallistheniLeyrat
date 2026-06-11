@@ -1583,3 +1583,33 @@ html, body {
   font-size: 0.75rem;
   margin-right: 4px;
 }
+
+/* ===== Création de profil ===== */
+#createProfileScreen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100dvh;
+  padding: 32px 24px;
+  background: linear-gradient(160deg, #fff5f5, #ffffff);
+}
+
+.profile-btn-create {
+  border-style: dashed;
+  border-color: var(--ok);
+  color: var(--ok);
+  margin-top: 4px;
+}
+.profile-btn-create:hover { border-color: var(--ok); box-shadow: 0 4px 20px rgba(31,138,76,0.15); }
+
+.profile-avatar.create {
+  background: #f0fdf4;
+  color: var(--ok);
+  font-size: 2rem;
+}
+
+.profile-avatar.custom {
+  font-size: 2rem;
+  font-weight: 900;
+}
