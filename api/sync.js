@@ -8,7 +8,7 @@ let dbReady = false;
 function getDb() {
   if (!db) {
     db = createClient({
-      url: process.env.TURSO_URL,
+      url: (process.env.TURSO_URL || '').replace('libsql://', 'https://'),
       authToken: process.env.TURSO_TOKEN,
     });
   }
