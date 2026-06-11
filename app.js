@@ -2184,6 +2184,10 @@ function woRenderCarousel() {
 
   carousel.innerHTML = `<div class="wo-carousel-track" id="woCarouselTrack">${slidesHTML}</div>`;
 
+  // Activer le premier slide
+  const firstSlide = document.getElementById('wo-slide-0');
+  if (firstSlide) firstSlide.classList.add('active');
+
   // Dots
   dotsEl.innerHTML = Array.from({length: n}, (_, i) =>
     `<button class="wo-dot" id="wo-dot-${i}" onclick="woGoTo(${i})"></button>`
@@ -2193,15 +2197,19 @@ function woRenderCarousel() {
 function woGoTo(idx) {
   const n = woState.exercises.length;
   if (idx < 0 || idx >= n) return;
+
+  // Désactiver l'ancien slide
+  const prev = document.getElementById('wo-slide-' + woState.current);
+  if (prev) prev.classList.remove('active');
+
   woState.current = idx;
 
-  const carousel = document.getElementById('woCarousel');
-  if (carousel) carousel.scrollTo({ left: idx * carousel.offsetWidth, behavior: 'smooth' });
+  // Activer le nouveau et remonter en haut
+  const next = document.getElementById('wo-slide-' + idx);
+  if (next) { next.classList.add('active'); next.scrollTop = 0; }
 
-  // Update progress text
   document.getElementById('woProgress').textContent = `Exercice ${idx + 1} / ${n}`;
 
-  // Update dots
   for (let i = 0; i < n; i++) {
     const dot = document.getElementById('wo-dot-' + i);
     if (!dot) continue;
@@ -2216,27 +2224,23 @@ function woGoTo(idx) {
 
 // Swipe handling
 let woTouchStartX = 0;
+let woTouchStartY = 0;
 
 function woInitSwipe() {
-  // Le scroll snap CSS gère le swipe nativement.
-  // On écoute juste scrollend pour mettre à jour l'état courant et les dots.
   const carousel = document.getElementById('woCarousel');
   if (!carousel) return;
-  const onScroll = () => {
-    const idx = Math.round(carousel.scrollLeft / carousel.offsetWidth);
-    if (idx !== woState.current && idx >= 0 && idx < woState.exercises.length) {
-      woState.current = idx;
-      document.getElementById('woProgress').textContent = `Exercice ${idx + 1} / ${woState.exercises.length}`;
-      for (let i = 0; i < woState.exercises.length; i++) {
-        const dot = document.getElementById('wo-dot-' + i);
-        if (!dot) continue;
-        dot.className = 'wo-dot';
-        if (woState.timers[i] && woState.timers[i].doneSets >= woState.exercises[i].targetSets) dot.classList.add('done');
-        else if (i === idx) dot.classList.add('active');
-      }
+  carousel.addEventListener('touchstart', e => {
+    woTouchStartX = e.touches[0].clientX;
+    woTouchStartY = e.touches[0].clientY;
+  }, { passive: true });
+  carousel.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - woTouchStartX;
+    const dy = e.changedTouches[0].clientY - woTouchStartY;
+    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+      if (dx < 0) woGoTo(woState.current + 1);
+      else woGoTo(woState.current - 1);
     }
-  };
-  carousel.addEventListener('scroll', onScroll, { passive: true });
+  }, { passive: true });
 }
 
 function woToggleTimer(idx) {
