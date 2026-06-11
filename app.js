@@ -1536,15 +1536,42 @@ function renderSettings() {
   document.getElementById('settingRythm').value = load('rythm', '5');
   document.getElementById('rpgResetInfo').textContent =
     `${getRPGInfo().name} — ${getXP()} XP — ${countDoneSessions()} séances`;
+  const iw = load('initWeight'); if (iw && document.getElementById('settingInitWeight')) document.getElementById('settingInitWeight').value = iw;
+  const bh = load('bodyHeight'); if (bh && document.getElementById('settingBodyHeight')) document.getElementById('settingBodyHeight').value = bh;
+
+  // Ajouter mesure rapide dans les réglages
+  const today = new Date().toISOString().slice(0, 10);
+  const qm = document.getElementById('quickMeasureDate');
+  if (qm) qm.value = today;
 }
 
 function saveSettings() {
-  store('startDate', document.getElementById('settingStartDate').value);
+  const dateVal = document.getElementById('settingStartDate').value;
+  if (!dateVal) {
+    showToast('⚠️ La date de départ est obligatoire.');
+    return;
+  }
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const chosen = new Date(dateVal + 'T00:00:00');
+  if (chosen > today) {
+    showToast('⚠️ La date de départ ne peut pas être dans le futur.');
+    return;
+  }
+
+  const prevDate = load('startDate');
+  store('startDate', dateVal);
   store('level', document.getElementById('settingLevel').value);
   store('notifTime', document.getElementById('settingNotifTime').value);
   store('notifEnabled', document.getElementById('settingNotifEnabled').checked);
   store('objective', document.getElementById('settingObjective').value);
   store('rythm', document.getElementById('settingRythm').value);
+
+  // Poids / taille corporelle
+  const initWeight = document.getElementById('settingInitWeight')?.value;
+  const bodyHeight = document.getElementById('settingBodyHeight')?.value;
+  if (initWeight) store('initWeight', parseFloat(initWeight));
+  if (bodyHeight) store('bodyHeight', parseFloat(bodyHeight));
+
   // Feature 6: demander permission si notifications activées
   if (document.getElementById('settingNotifEnabled').checked) {
     if (!('Notification' in window)) {
@@ -1557,8 +1584,11 @@ function saveSettings() {
       scheduleNotifications();
     }
   }
+
   showToast('Réglages enregistrés ✓');
-  renderHome();
+  // Seulement re-render home si la date a changé (évite les crashs)
+  if (prevDate !== dateVal) renderHome();
+  renderSettings();
   syncToCloud();
 }
 
@@ -2025,6 +2055,21 @@ function renderDashboard() {
     if (weightData.length > 0) drawWeightChart('weightChart', weightData, 'poids', '#d71920');
     if (tailleData.length > 0) drawWeightChart('tailleChart', tailleData, 'tour de taille', '#2563eb');
   });
+}
+
+function handleQuickMeasure() {
+  const date = document.getElementById('quickMeasureDate').value;
+  const poids = document.getElementById('quickMeasureWeight').value;
+  const taille = document.getElementById('quickMeasureTaille').value;
+  const note = document.getElementById('quickMeasureNote').value;
+  if (!date) { showToast('Indique une date.'); return; }
+  if (!poids && !taille) { showToast('Indique au moins le poids ou le tour de taille.'); return; }
+  saveWeight(date, poids || null, taille || null, note);
+  document.getElementById('quickMeasureWeight').value = '';
+  document.getElementById('quickMeasureTaille').value = '';
+  document.getElementById('quickMeasureNote').value = '';
+  showToast('Mesure enregistrée ✓');
+  syncToCloud();
 }
 
 function handleSaveMeasure() {
