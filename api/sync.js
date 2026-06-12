@@ -67,6 +67,18 @@ module.exports = async function handler(req, res) {
     return res.status(500).json({ ok: false, error: 'DB unavailable: ' + (err.message || String(err)) });
   }
 
+  // ── GET /api/sync?action=list — liste profils custom (sans PIN) ─
+  if (req.method === 'GET' && req.query.action === 'list') {
+    try {
+      const result = await getDb().execute('SELECT user FROM profiles WHERE pin IS NOT NULL');
+      const users = result.rows.map(r => r.user);
+      return res.status(200).json({ ok: true, users });
+    } catch (err) {
+      console.error('List error:', err.message || err);
+      return res.status(500).json({ ok: false, error: 'Erreur serveur' });
+    }
+  }
+
   // ── GET /api/sync?user=X&pin=Y ─────────────────────────────────
   if (req.method === 'GET') {
     const { user, pin } = req.query;
