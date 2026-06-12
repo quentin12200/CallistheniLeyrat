@@ -441,6 +441,29 @@ function saveCustomProfiles(list) {
   localStorage.setItem('customProfiles', JSON.stringify(list));
 }
 
+async function fetchAndMergeCustomProfiles() {
+  try {
+    const res = await fetch(SYNC_API + '?action=list');
+    if (!res.ok) return;
+    const json = await res.json();
+    if (!json.ok || !Array.isArray(json.users)) return;
+    const local = loadCustomProfiles();
+    const localIds = new Set(local.map(p => p.id));
+    let changed = false;
+    json.users.forEach((userId, i) => {
+      if (!localIds.has(userId)) {
+        const name = userId.charAt(0).toUpperCase() + userId.slice(1);
+        local.push({ id: userId, name, color: AVATAR_COLORS[i % AVATAR_COLORS.length] });
+        changed = true;
+      }
+    });
+    if (changed) {
+      saveCustomProfiles(local);
+      renderCustomProfiles();
+    }
+  } catch (e) { /* offline */ }
+}
+
 function renderCustomProfiles() {
   const list = loadCustomProfiles();
   const container = document.getElementById('customProfileCards');
@@ -2579,6 +2602,7 @@ function init() {
 
   migrateOldData();
   renderCustomProfiles();
+  fetchAndMergeCustomProfiles(); // charge les profils distants en arrière-plan
 
   // Reprendre le dernier profil si disponible
   const last = localStorage.getItem('lastUser');
