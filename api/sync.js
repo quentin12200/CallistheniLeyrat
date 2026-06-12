@@ -22,13 +22,9 @@ async function ensureTable() {
       user TEXT PRIMARY KEY,
       pin TEXT,
       data TEXT NOT NULL DEFAULT '{}',
-      updated_at TEXT NOT NULL
+      updated_at TEXT NOT NULL DEFAULT ''
     )
   `);
-  // Add pin column if it doesn't exist (migration)
-  try {
-    await getDb().execute(`ALTER TABLE profiles ADD COLUMN pin TEXT`);
-  } catch (e) { /* column already exists */ }
   dbReady = true;
 }
 
@@ -116,7 +112,8 @@ module.exports = async function handler(req, res) {
 
     // ── Créer un nouveau profil ──────────────────────────────────
     if (action === 'register') {
-      if (pin.length < 4) {
+      const pinStr = String(pin);
+      if (pinStr.length < 4) {
         return res.status(400).json({ ok: false, error: 'PIN trop court (4 chiffres minimum)' });
       }
       // Check user doesn't already exist
@@ -132,12 +129,12 @@ module.exports = async function handler(req, res) {
       try {
         await getDb().execute({
           sql: `INSERT INTO profiles (user, pin, data, updated_at) VALUES (?, ?, '{}', ?)`,
-          args: [userKey, String(pin), new Date().toISOString()],
+          args: [userKey, pinStr, new Date().toISOString()],
         });
         return res.status(200).json({ ok: true });
       } catch (err) {
-        console.error('Register error:', err);
-        return res.status(500).json({ ok: false, error: 'Erreur serveur' });
+        console.error('Register error:', err.message || err);
+        return res.status(500).json({ ok: false, error: 'Erreur création profil: ' + (err.message || 'inconnue') });
       }
     }
 
