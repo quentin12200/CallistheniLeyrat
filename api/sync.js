@@ -7,10 +7,12 @@ let dbReady = false;
 
 function getDb() {
   if (!db) {
-    db = createClient({
-      url: (process.env.TURSO_URL || '').replace('libsql://', 'https://'),
-      authToken: process.env.TURSO_TOKEN,
-    });
+    let url = process.env.TURSO_URL || '';
+    // Turso serverless needs https:// not libsql://
+    if (url.startsWith('libsql://')) url = 'https://' + url.slice('libsql://'.length);
+    if (!url) throw new Error('TURSO_URL env var not set');
+    if (!process.env.TURSO_TOKEN) throw new Error('TURSO_TOKEN env var not set');
+    db = createClient({ url, authToken: process.env.TURSO_TOKEN });
   }
   return db;
 }
@@ -59,8 +61,10 @@ module.exports = async function handler(req, res) {
   try {
     await ensureTable();
   } catch (err) {
-    console.error('DB init error:', err);
-    return res.status(500).json({ ok: false, error: 'DB unavailable' });
+    console.error('DB init error:', err.message || err);
+    console.error('TURSO_URL set:', !!process.env.TURSO_URL);
+    console.error('TURSO_TOKEN set:', !!process.env.TURSO_TOKEN);
+    return res.status(500).json({ ok: false, error: 'DB unavailable: ' + (err.message || String(err)) });
   }
 
   // ── GET /api/sync?user=X&pin=Y ─────────────────────────────────
