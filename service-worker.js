@@ -1,4 +1,4 @@
-const CACHE_NAME = 'callistheni-v5';
+const CACHE_NAME = 'callistheni-v6';
 const IMAGE_ASSETS = [
   '/icons/icon-192.png',
   '/icons/icon-512.png',
@@ -65,17 +65,77 @@ self.addEventListener('fetch', e => {
   );
 });
 
+const MOTIVATION_MSGS_SW = [
+  "La régularité, c'est ton super-pouvoir. Pas besoin d'être parfait, juste présent. 💪",
+  "Chaque séance compte, même la plus courte. Tu n'as pas à tout déchirer aujourd'hui.",
+  "Le secret du sport ? Recommencer. Encore. Et encore. 🔥",
+  "Pas motivé ? Normal. Les champions s'entraînent aussi les jours sans envie.",
+  "5 minutes suffisent pour démarrer. Et souvent, on continue bien plus. 🚀",
+  "Ton corps se souvient de chaque effort. Même ceux que tu as oublié.",
+  "Ce n'est pas une question de force. C'est une question d'habitude. 🌱",
+  "Quand tu ne veux pas, c'est exactement le bon moment. C'est là que ça compte.",
+];
+
+// Stocker la config notif reçue de l'app
+let notifConfig = null;
+
 self.addEventListener('message', e => {
   if (e.data && e.data.type === 'SCHEDULE_NOTIFICATION') {
-    const { title, body, delay } = e.data;
+    const { title, body, delay, notifTime, daysSince, streak } = e.data;
+    notifConfig = { notifTime, daysSince, streak };
+
+    // Programmer avec setTimeout (fonctionne si l'app reste ouverte)
     setTimeout(() => {
       self.registration.showNotification(title, {
         body,
         icon: '/icons/icon-192.png',
         badge: '/icons/icon-192.png',
         vibrate: [200, 100, 200],
-        tag: 'callistheni-reminder'
+        tag: 'callistheni-reminder',
+        requireInteraction: true,
+        actions: [{ action: 'open', title: '▶ Lancer la séance' }]
       });
     }, delay);
   }
+});
+
+// Periodic Background Sync — se déclenche même app fermée (Android Chrome)
+self.addEventListener('periodicsync', e => {
+  if (e.tag === 'daily-workout-reminder') {
+    e.waitUntil(fireReminderIfDue());
+  }
+});
+
+async function fireReminderIfDue() {
+  // Vérifier via les clients ouverts si la séance est déjà faite
+  const clients = await self.clients.matchAll({ type: 'window' });
+  // Si l'app est ouverte, elle gère elle-même
+  if (clients.length > 0) return;
+
+  const now = new Date();
+  const hour = now.getHours();
+  // Ne notifier qu'entre 7h et 22h
+  if (hour < 7 || hour > 22) return;
+
+  const msg = MOTIVATION_MSGS_SW[Math.floor(Math.random() * MOTIVATION_MSGS_SW.length)];
+  await self.registration.showNotification('CallistheniLeyrat 🏋️', {
+    body: msg,
+    icon: '/icons/icon-192.png',
+    badge: '/icons/icon-192.png',
+    vibrate: [200, 100, 200],
+    tag: 'callistheni-reminder',
+    requireInteraction: true,
+    actions: [{ action: 'open', title: '▶ Lancer la séance' }]
+  });
+}
+
+// Clic sur la notification → ouvre l'app
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  e.waitUntil(
+    self.clients.matchAll({ type: 'window' }).then(clients => {
+      if (clients.length > 0) return clients[0].focus();
+      return self.clients.openWindow('/');
+    })
+  );
 });
