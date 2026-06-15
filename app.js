@@ -167,6 +167,35 @@ const EXERCISES = {
   }
 };
 
+// ─── Étirements recommandés par groupe musculaire ─────────────
+const STRETCHES = {
+  "Quadriceps":       { name: "Étirement quadriceps",       desc: "Debout, attrape ta cheville derrière toi et tire doucement. Genou pointé vers le bas.", emoji: "🦵" },
+  "Ischio-jambiers":  { name: "Étirement ischio-jambiers",  desc: "Assis jambe tendue, penche le buste vers les orteils. Garde le dos droit.", emoji: "🦵" },
+  "Fessiers":         { name: "Étirement fessiers",         desc: "Allongé, croise une cheville sur le genou opposé et tire la jambe vers toi.", emoji: "🍑" },
+  "Mollets":          { name: "Étirement mollets",          desc: "Appui contre le mur, jambe arrière tendue, talon au sol. Pousse le mur.", emoji: "🦵" },
+  "Pectoraux":        { name: "Ouverture pectoraux",        desc: "Bras tendu contre un montant, tourne le corps pour sentir l'étirement.", emoji: "💪" },
+  "Triceps":          { name: "Étirement triceps",          desc: "Passe un bras derrière la tête, coude plié. L'autre main tire le coude doucement.", emoji: "💪" },
+  "Épaules":          { name: "Étirement épaules",          desc: "Passe un bras à l'horizontal, l'autre bras le ramène vers la poitrine.", emoji: "🤸" },
+  "Lombaires":        { name: "Étirement lombaires",        desc: "Allongé sur le dos, ramène les deux genoux sur la poitrine. Bascule doucement.", emoji: "🧘" },
+  "Abdos":            { name: "Étirement abdominaux",       desc: "Allongé sur le ventre, mains sous les épaules, pousse pour lever le buste (cobra).", emoji: "🧘" },
+  "Obliques":         { name: "Étirement obliques",         desc: "Debout, un bras levé au-dessus de la tête, incline le buste de côté.", emoji: "🤸" },
+  "Cardio":           { name: "Respiration et mobilité",    desc: "Respirations profondes, rotations des chevilles et des hanches pour activer la circulation.", emoji: "💨" },
+  "Jambes":           { name: "Étirement jambes globales",  desc: "Écarte les pieds à 2x la largeur des épaules, descends lentement en plié.", emoji: "🦵" },
+  "Coordination":     { name: "Activation neuromusculaire", desc: "Rotations lentes des poignets, chevilles et hanches. Mouvements doux et contrôlés.", emoji: "🤸" },
+};
+
+function getStretchesForMuscles(muscles) {
+  const seen = new Set();
+  const result = [];
+  muscles.forEach(m => {
+    if (STRETCHES[m] && !seen.has(m)) {
+      seen.add(m);
+      result.push(STRETCHES[m]);
+    }
+  });
+  return result.slice(0, 2); // max 2 étirements avant un exercice
+}
+
 // ─── Programme (repris de preview.html, étendu) ───────────────
 function baseWeek(day) {
   const d = ((day - 1) % 7) + 1;
@@ -2259,7 +2288,8 @@ const woState = {
   current: 0,
   timers: {},         // per idx: {doneSets, running, remaining, phase:'work'|'rest', interval}
   sessionStart: null,
-  sessionInterval: null
+  sessionInterval: null,
+  stretchTimers: {}  // { idx: intervalId }
 };
 
 const WO_REST_DURATION = 30;
@@ -2267,6 +2297,31 @@ const SVG_R = 70; // radius of SVG circle
 const SVG_CIRC = 2 * Math.PI * SVG_R;
 
 function launchTodayWorkout() { openWorkoutOverlay(0); }
+
+function woSkipStretch(idx) {
+  clearInterval(woState.stretchTimers[idx]);
+  const panel = document.getElementById('wo-stretch-' + idx);
+  const main = document.getElementById('wo-main-' + idx);
+  if (panel) panel.style.display = 'none';
+  if (main) main.style.display = '';
+}
+
+function woStartStretch(idx) {
+  const btn = document.getElementById('wo-stretch-start-' + idx);
+  if (btn) btn.style.display = 'none';
+  let remaining = 45;
+  const timerEl = document.getElementById('wo-stretch-timer-' + idx);
+  woState.stretchTimers[idx] = setInterval(() => {
+    remaining--;
+    if (timerEl) timerEl.textContent = remaining + 's';
+    if (remaining <= 0) {
+      clearInterval(woState.stretchTimers[idx]);
+      playRestEnd();
+      if (navigator.vibrate) navigator.vibrate([100, 50, 200]);
+      woSkipStretch(idx);
+    }
+  }, 1000);
+}
 
 function openWorkoutOverlay(startIdx = 0) {
   const today = dayNumber();
@@ -2337,6 +2392,8 @@ function openWorkoutOverlay(startIdx = 0) {
 function closeWorkoutOverlay() {
   // Stop all timers
   Object.values(woState.timers).forEach(t => { if (t && t.interval) clearInterval(t.interval); });
+  Object.values(woState.stretchTimers).forEach(id => clearInterval(id));
+  woState.stretchTimers = {};
   clearInterval(woState.sessionInterval);
   woState.sessionInterval = null;
   document.getElementById('workoutOverlay').classList.add('hidden');
@@ -2356,9 +2413,33 @@ function woRenderCarousel() {
       return `<div class="${cls}">${s+1}</div>`;
     }).join('');
 
+    const stretches = getStretchesForMuscles(ex.muscles);
+    const stretchHTML = stretches.length > 0 ? `
+      <div class="wo-stretch-panel" id="wo-stretch-${i}">
+        <div class="wo-stretch-title">🧘 Avant de commencer</div>
+        <div class="wo-stretch-subtitle">Étire ces muscles avant l'exercice</div>
+        ${stretches.map(s => `
+          <div class="wo-stretch-item">
+            <div class="wo-stretch-emoji">${s.emoji}</div>
+            <div>
+              <div class="wo-stretch-name">${s.name}</div>
+              <div class="wo-stretch-desc">${s.desc}</div>
+            </div>
+          </div>`).join('')}
+        <div class="wo-stretch-timer-row">
+          <div class="wo-stretch-timer" id="wo-stretch-timer-${i}">45s</div>
+          <span class="wo-stretch-timer-label">pour s'étirer</span>
+        </div>
+        <div class="wo-stretch-btns">
+          <button class="wo-stretch-skip" onclick="woSkipStretch(${i})">Passer →</button>
+          <button class="wo-stretch-start" id="wo-stretch-start-${i}" onclick="woStartStretch(${i})">▶ Démarrer</button>
+        </div>
+      </div>` : '';
+
     return `
       <div class="wo-slide" id="wo-slide-${i}" data-idx="${i}">
-        <div class="wo-main">
+        ${stretchHTML}
+        <div class="wo-main" id="wo-main-${i}" style="${stretches.length > 0 ? 'display:none;' : ''}">
           <div class="wo-ex-name">${ex.name}</div>
           <div class="wo-ex-detail">${ex.detail}</div>
           <div class="wo-timer-ring" id="wo-ring-${i}">
@@ -2394,6 +2475,7 @@ function woRenderCarousel() {
           </div>
         </div>
       </div>`;
+
   }).join('');
 
   carousel.innerHTML = `<div class="wo-carousel-track" id="woCarouselTrack">${slidesHTML}</div>`;
@@ -2421,6 +2503,10 @@ function woGoTo(idx) {
   // Activer le nouveau et remonter en haut
   const next = document.getElementById('wo-slide-' + idx);
   if (next) { next.classList.add('active'); next.scrollTop = 0; }
+
+  // Si l'exercice est déjà en cours (séries faites), passer l'étirement
+  const t = woState.timers[idx];
+  if (t && t.doneSets > 0) woSkipStretch(idx);
 
   document.getElementById('woProgress').textContent = `Exercice ${idx + 1} / ${n}`;
 
