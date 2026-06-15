@@ -925,18 +925,55 @@ function resetTimer() {
 function playBeep() {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    [0, 0.3, 0.6].forEach(t => {
+    // 3 bips aigus forts — fin de série
+    [0, 0.25, 0.5].forEach(t => {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.connect(gain);
       gain.connect(ctx.destination);
       osc.frequency.value = 880;
-      gain.gain.setValueAtTime(0.3, ctx.currentTime + t);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.25);
+      gain.gain.setValueAtTime(0.8, ctx.currentTime + t);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.2);
       osc.start(ctx.currentTime + t);
-      osc.stop(ctx.currentTime + t + 0.25);
+      osc.stop(ctx.currentTime + t + 0.2);
     });
   } catch (e) { /* silencieux si le contexte audio échoue */ }
+}
+
+function playRestStart() {
+  // Son grave prolongé — début de pause
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.frequency.value = 330;
+    osc.type = 'sine';
+    gain.gain.setValueAtTime(0.7, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.6);
+  } catch (e) {}
+}
+
+function playRestEnd() {
+  // 2 bips montants énergiques — fin de pause, c'est reparti
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    [[440, 0], [660, 0.2], [880, 0.4]].forEach(([freq, t]) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.value = freq;
+      osc.type = 'sine';
+      gain.gain.setValueAtTime(0.8, ctx.currentTime + t);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.18);
+      osc.start(ctx.currentTime + t);
+      osc.stop(ctx.currentTime + t + 0.18);
+    });
+  } catch (e) {}
 }
 
 // ─── Wake Lock (écran allumé pendant la séance) ───────────────
@@ -2468,6 +2505,8 @@ function woTick(idx) {
         t.phase = 'rest';
         t.remaining = WO_REST_DURATION;
         t.running = true;
+        playRestStart(); // son grave : début de pause
+        if (navigator.vibrate) navigator.vibrate([200]);
         const btn = document.getElementById('wo-play-btn-' + idx);
         if (btn) { btn.textContent = '⏸'; btn.className = 'wo-play-btn rest'; }
         const fill = document.getElementById('wo-ring-fill-' + idx);
@@ -2480,6 +2519,8 @@ function woTick(idx) {
       t.phase = 'work';
       t.remaining = ex.duration;
       t.running = true;
+      playRestEnd(); // sons montants : fin de pause, on repart
+      if (navigator.vibrate) navigator.vibrate([100, 50, 100, 50, 300]);
       const btn = document.getElementById('wo-play-btn-' + idx);
       if (btn) { btn.textContent = '⏸'; btn.className = 'wo-play-btn'; }
       const fill = document.getElementById('wo-ring-fill-' + idx);
