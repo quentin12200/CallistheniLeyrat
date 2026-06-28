@@ -1005,6 +1005,25 @@ function playRestEnd() {
   } catch (e) {}
 }
 
+function playCountdownBeep(n) {
+  // Décompte 5-4-3-2-1 pendant la pause : fréquence monte avec l'urgence
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const freqs = { 5: 400, 4: 480, 3: 560, 2: 660, 1: 800 };
+    const freq = freqs[n] || 500;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.frequency.value = freq;
+    osc.type = 'sine';
+    gain.gain.setValueAtTime(0.7, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.15);
+  } catch (e) {}
+}
+
 // ─── Wake Lock (écran allumé pendant la séance) ───────────────
 let wakeLock = null;
 
@@ -2649,6 +2668,9 @@ function woTick(idx) {
 
   if (t.remaining > 0) {
     t.remaining--;
+    if (t.phase === 'rest' && t.remaining >= 1 && t.remaining <= 5) {
+      playCountdownBeep(t.remaining);
+    }
     woUpdateRingDisplay(idx);
   } else {
     clearInterval(t.interval);
