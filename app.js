@@ -810,25 +810,31 @@ function awardXP(day) {
 
 // ─── Badges ───────────────────────────────────────────────────
 const BADGES = [
-  { id: 'first',    icon: '🏅', name: 'Première séance',       check: () => countDoneSessions() >= 1 },
-  { id: 'week',     icon: '🔥', name: '7 jours consécutifs',   check: () => getStreak() >= 7 },
-  { id: 's30',      icon: '💪', name: '30 séances',            check: () => countDoneSessions() >= 30 },
-  { id: 'streak14', icon: '⚡', name: '14 jours de suite',     check: () => getStreak() >= 14 },
-  { id: 'cycle2',   icon: '🌀', name: 'Cycle 2 atteint',       check: () => dayNumber() >= 29 },
-  { id: 'master',   icon: '👑', name: 'Niveau Maître',         check: () => getRPGLevel() >= 5 }
+  { id: 'first',     icon: '🏅', name: 'Première séance',        desc: 'Tu as osé commencer.',              check: () => countDoneSessions() >= 1 },
+  { id: 'week',      icon: '🔥', name: '7 jours consécutifs',    desc: 'Une semaine sans fléchir.',          check: () => getStreak() >= 7 },
+  { id: 'streak14',  icon: '⚡', name: '2 semaines de suite',    desc: 'La régularité s\'installe.',         check: () => getStreak() >= 14 },
+  { id: 'streak21',  icon: '🌟', name: '21 jours — l\'habitude', desc: 'L\'habitude est ancrée. Bravo !',   check: () => getStreak() >= 21 },
+  { id: 'streak30',  icon: '👑', name: '1 mois consécutif',      desc: 'Un mois sans manquer. Incroyable.', check: () => getStreak() >= 30 },
+  { id: 's10',       icon: '🎯', name: '10 séances',             desc: 'Tu gardes le cap.',                  check: () => countDoneSessions() >= 10 },
+  { id: 's30',       icon: '💪', name: '30 séances',             desc: 'Un mois de travail au compteur.',   check: () => countDoneSessions() >= 30 },
+  { id: 's50',       icon: '🦾', name: '50 séances',             desc: 'Tu es sérieux(se), ça se voit.',    check: () => countDoneSessions() >= 50 },
+  { id: 's100',      icon: '🏆', name: '100 séances',            desc: 'Centurion. Respect total.',          check: () => countDoneSessions() >= 100 },
+  { id: 'cycle2',    icon: '🌀', name: 'Cycle 2 atteint',        desc: '28 jours de programme accomplis.',  check: () => dayNumber() >= 29 },
+  { id: 'cycle3',    icon: '🔄', name: 'Cycle 3 atteint',        desc: 'Tu enchaînes les cycles !',         check: () => dayNumber() >= 57 },
+  { id: 'master',    icon: '🥇', name: 'Niveau Maître',          desc: 'Tu as gravi tous les échelons.',    check: () => getRPGLevel() >= 5 },
 ];
 
 function checkBadges() {
   const unlocked = load('badges', []);
-  let changed = false;
+  const newlyUnlocked = [];
   BADGES.forEach(b => {
     if (!unlocked.includes(b.id) && b.check()) {
       unlocked.push(b.id);
-      changed = true;
+      newlyUnlocked.push(b);
     }
   });
-  if (changed) store('badges', unlocked);
-  return unlocked;
+  if (newlyUnlocked.length) store('badges', unlocked);
+  return { unlocked, newlyUnlocked };
 }
 
 function isUnlocked(id) {
@@ -872,16 +878,29 @@ const ENCOURAGEMENTS = [
   "Respect ! Même quand c'est dur, tu es là.",
   "Une de plus ! Continue comme ça, tu es sur la bonne voie.",
   "Bien joué ! Le plus dur, c'était de commencer.",
+  "Séance faite. Le reste de la journée t'appartient. 🌟",
+  "Corps en mouvement, esprit qui avance. Belle journée !",
 ];
 
 const COMEBACK_MESSAGES = [
-  "Content de te revoir ! On reprend en douceur, sans pression.",
+  "Content de te revoir ! On reprend en douceur, sans pression. 💪",
   "Bienvenue de retour ! Ton corps se souvient de tout.",
   "Tu es là, c'est l'essentiel. On y va tranquillement.",
   "Retour en force ! Pas de jugement ici, que du positif.",
+  "Une absence n'efface pas tes progrès. Tu reprends là où tu en es.",
+  "L'important c'est de revenir. Et tu es là. C'est tout ce qui compte.",
+  "Pas de culpabilité — juste un nouveau départ. C'est parti ! 🔥",
 ];
 
 function randomEncouragement() {
+  const streak = getStreak();
+  const sessions = countDoneSessions();
+  if (streak >= 21) return `${streak} jours d'affilée — tu es une légende. 👑`;
+  if (streak >= 14) return `${streak} jours de suite — incroyable régularité ! ⚡`;
+  if (streak >= 7)  return `${streak} jours consécutifs — tu es en feu ! 🔥`;
+  if (streak >= 3)  return `${streak} jours d'affilée — ne lâche pas ! ⭐`;
+  if (sessions === 1) return `Première séance faite ! L'aventure commence. 🎉`;
+  if (sessions >= 50) return `${sessions} séances au compteur — champion(ne) absolu(e) ! 🏆`;
   return ENCOURAGEMENTS[Math.floor(Math.random() * ENCOURAGEMENTS.length)];
 }
 
@@ -1498,13 +1517,14 @@ function renderHome() {
 function renderBadges() {
   const grid = document.getElementById('badgesGrid');
   if (!grid) return;
-  const unlocked = checkBadges();
+  const { unlocked } = checkBadges();
   grid.innerHTML = BADGES.map(b => {
     const earned = unlocked.includes(b.id);
     return `
       <div class="badge-item ${earned ? 'unlocked' : ''}">
-        <div class="badge-icon">${b.icon}</div>
+        <div class="badge-icon">${earned ? b.icon : '🔒'}</div>
         <div class="badge-name">${b.name}</div>
+        ${earned && b.desc ? `<div class="badge-desc">${b.desc}</div>` : ''}
       </div>`;
   }).join('');
 }
@@ -1709,22 +1729,31 @@ function renderSettings() {
 
   // Statut notifications
   const statusEl = document.getElementById('notifStatus');
+  const guideEl = document.getElementById('notifGuide');
   if (statusEl) {
     if (!('Notification' in window)) {
-      statusEl.textContent = '❌ Non supporté sur cet appareil';
-      statusEl.className = 'notif-status notif-status-off';
-    } else if (Notification.permission === 'denied') {
-      statusEl.textContent = '🚫 Bloquées — autorise dans les réglages du navigateur';
+      statusEl.innerHTML = '❌ Non supporté — utilise <strong>Chrome</strong> sur Android pour les notifications';
       statusEl.className = 'notif-status notif-status-denied';
+      if (guideEl) guideEl.style.display = 'block';
+    } else if (Notification.permission === 'denied') {
+      statusEl.innerHTML = '🚫 Bloquées sur ce site — voir les instructions ci-dessous';
+      statusEl.className = 'notif-status notif-status-denied';
+      if (guideEl) guideEl.style.display = 'block';
     } else if (Notification.permission === 'granted' && load('notifEnabled', false)) {
       const subscribed = load('pushSubscribed', false);
-      statusEl.textContent = subscribed
-        ? '✅ Actives — tu recevras des rappels même app fermée'
-        : '⚠️ Permission OK — activation en cours…';
+      statusEl.innerHTML = subscribed
+        ? '✅ Actives — rappels reçus même app fermée !'
+        : '⚠️ Permission OK — en cours d\'activation…';
       statusEl.className = 'notif-status notif-status-ok';
-    } else {
-      statusEl.textContent = '💤 Désactivées';
+      if (guideEl) guideEl.style.display = 'none';
+    } else if (Notification.permission === 'default') {
+      statusEl.innerHTML = '💤 Désactivées — active le rappel et enregistre';
       statusEl.className = 'notif-status notif-status-off';
+      if (guideEl) guideEl.style.display = 'none';
+    } else {
+      statusEl.innerHTML = '💤 Désactivées';
+      statusEl.className = 'notif-status notif-status-off';
+      if (guideEl) guideEl.style.display = 'none';
     }
   }
 
@@ -2239,7 +2268,7 @@ function renderDashboard() {
   const weightDelta = (latestWeight && initWeight) ? (latestWeight - initWeight).toFixed(1) : null;
 
   // Unlocked badges
-  const unlockedBadges = checkBadges();
+  const { unlocked: unlockedBadges } = checkBadges();
 
   document.getElementById('dashContent').innerHTML = `
 
@@ -2335,8 +2364,9 @@ function renderDashboard() {
         ${BADGES.map(b => {
           const earned = unlockedBadges.includes(b.id);
           return `<div class="badge-item ${earned ? 'unlocked' : ''}">
-            <div class="badge-icon">${b.icon}</div>
+            <div class="badge-icon">${earned ? b.icon : '🔒'}</div>
             <div class="badge-name">${b.name}</div>
+            ${earned && b.desc ? `<div class="badge-desc">${b.desc}</div>` : ''}
           </div>`;
         }).join('')}
       </div>
@@ -2873,35 +2903,94 @@ function woMarkExerciseDone(idx) {
   }
 }
 
+// Milestones de série qui méritent une célébration spéciale
+const STREAK_MILESTONES = [
+  { streak: 3,  emoji: '⭐', title: '3 jours de suite !',       msg: 'Le mouvement est lancé. Ne t\'arrête plus.' },
+  { streak: 7,  emoji: '🔥', title: 'Une semaine complète !',   msg: 'Une semaine sans fléchir. Tu montres qui tu es vraiment.' },
+  { streak: 14, emoji: '⚡', title: 'Deux semaines non-stop !', msg: 'Deux semaines. L\'habitude est là. Maintenant tu es lancé(e).' },
+  { streak: 21, emoji: '🌟', title: '21 jours — L\'habitude !', msg: 'On dit qu\'il faut 21 jours pour créer une habitude. C\'est fait. Tu as réussi.' },
+  { streak: 30, emoji: '👑', title: 'UN MOIS ENTIER !',         msg: 'Trente jours consécutifs. C\'est exceptionnel. Tu es une inspiration.' },
+  { streak: 50, emoji: '🏆', title: '50 jours de feu !',        msg: 'Cinquante jours. Ce n\'est plus une habitude, c\'est une identité.' },
+  { streak: 100,emoji: '🥇', title: '100 jours — Centurion !',  msg: 'Cent jours. Tu es dans une catégorie à part. Rien ne peut t\'arrêter.' },
+];
+
+function getMilestone(streak) {
+  const milestones = [...STREAK_MILESTONES].reverse();
+  return milestones.find(m => streak === m.streak) || null;
+}
+
+function getCompletionMsg(streak, sessions) {
+  if (streak >= 30) return `${streak} jours d'affilée — tu es une machine ! 👑`;
+  if (streak >= 21) return `${streak} jours de suite — l'habitude est bien ancrée ! 🌟`;
+  if (streak >= 14) return `${streak} jours consécutifs — tu es en feu ! ⚡`;
+  if (streak >= 7)  return `${streak} jours de suite — belle régularité ! 🔥`;
+  if (streak >= 3)  return `${streak} jours d'affilée — continue ! ⭐`;
+  if (sessions >= 50) return `${sessions} séances au compteur — champion(ne) ! 🏆`;
+  if (sessions >= 20) return `${sessions} séances — tu progresses super bien ! 💪`;
+  if (sessions >= 10) return `${sessions} séances au compteur — en route ! 🏅`;
+  if (sessions === 1) return 'Ta toute première séance — l\'aventure commence ! 🎉';
+  return 'Belle séance ! Ton futur toi te remercie. 💪';
+}
+
 function woShowCompletion() {
   clearInterval(woState.sessionInterval);
   woState.sessionInterval = null;
 
-  // Trigger existing completion logic
-  checkBadges();
+  const { newlyUnlocked } = checkBadges();
   const targetDay = woState._catchUpDay || dayNumber();
   markDone(targetDay, selectedFeedback);
+  saveStreak();
   if (woState._catchUpDay) {
     woState._catchUpDay = null;
     setTimeout(() => { renderCalendar(); renderHome(); }, 500);
   }
 
+  const streak = getStreak();
+  const sessions = countDoneSessions();
+  const milestone = getMilestone(streak);
+  const msg = getCompletionMsg(streak, sessions);
+
   const overlay = document.getElementById('workoutOverlay');
   const comp = document.createElement('div');
-  comp.className = 'wo-completion';
-  const msgs = [
-    'Tu l\'as fait ! Chaque séance compte.',
-    'Bravo ! La régularité, c\'est le vrai secret.',
-    'Belle séance ! Ton futur toi te remercie.',
-  ];
+  comp.className = 'wo-completion' + (milestone ? ' wo-completion-milestone' : '');
+
+  // Confetti elements pour les milestones
+  const confetti = milestone ? `<div class="wo-confetti" aria-hidden="true">${
+    ['🎊','✨','🎉','⭐','💥','🔥','🌟','💫'].map((e,i) =>
+      `<span class="wo-confetti-piece" style="--i:${i}">${e}</span>`
+    ).join('')
+  }</div>` : '';
+
+  // Badges nouvellement débloqués
+  const badgeHTML = newlyUnlocked.length ? `
+    <div class="wo-new-badges">
+      <div class="wo-new-badge-title">🏅 Succès débloqué${newlyUnlocked.length > 1 ? 's' : ''} !</div>
+      ${newlyUnlocked.map(b => `
+        <div class="wo-new-badge-item">
+          <span class="wo-new-badge-icon">${b.icon}</span>
+          <div>
+            <div class="wo-new-badge-name">${b.name}</div>
+            <div class="wo-new-badge-desc">${b.desc}</div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  ` : '';
+
   comp.innerHTML = `
-    <div class="wo-completion-emoji">🎉</div>
-    <div class="wo-completion-title">Séance terminée !</div>
-    <div class="wo-completion-msg">${msgs[Math.floor(Math.random() * msgs.length)]}</div>
-    <button class="btn btn-success" style="width:220px;" onclick="closeWorkoutOverlay();renderHome();">✓ Valider et retourner</button>
+    ${confetti}
+    <div class="wo-completion-emoji">${milestone ? milestone.emoji : '🎉'}</div>
+    <div class="wo-completion-title">${milestone ? milestone.title : 'Séance terminée !'}</div>
+    <div class="wo-completion-msg">${milestone ? milestone.msg : msg}</div>
+    ${milestone ? `<div class="wo-completion-streak-badge">🔥 ${streak} jours</div>` : ''}
+    ${badgeHTML}
+    <button class="btn btn-success" style="width:220px;margin-top:8px;" onclick="closeWorkoutOverlay();renderHome();">✓ Valider et continuer</button>
   `;
   overlay.appendChild(comp);
-  if (navigator.vibrate) navigator.vibrate([100, 50, 100, 50, 300]);
+  if (navigator.vibrate) navigator.vibrate(milestone
+    ? [200, 100, 200, 100, 400]
+    : [100, 50, 100, 50, 300]
+  );
 }
 
 function woToggleInfo(idx) {
