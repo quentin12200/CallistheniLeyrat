@@ -1729,22 +1729,31 @@ function renderSettings() {
 
   // Statut notifications
   const statusEl = document.getElementById('notifStatus');
+  const guideEl = document.getElementById('notifGuide');
   if (statusEl) {
     if (!('Notification' in window)) {
-      statusEl.textContent = '❌ Non supporté sur cet appareil';
-      statusEl.className = 'notif-status notif-status-off';
-    } else if (Notification.permission === 'denied') {
-      statusEl.textContent = '🚫 Bloquées — autorise dans les réglages du navigateur';
+      statusEl.innerHTML = '❌ Non supporté — utilise <strong>Chrome</strong> sur Android pour les notifications';
       statusEl.className = 'notif-status notif-status-denied';
+      if (guideEl) guideEl.style.display = 'block';
+    } else if (Notification.permission === 'denied') {
+      statusEl.innerHTML = '🚫 Bloquées sur ce site — voir les instructions ci-dessous';
+      statusEl.className = 'notif-status notif-status-denied';
+      if (guideEl) guideEl.style.display = 'block';
     } else if (Notification.permission === 'granted' && load('notifEnabled', false)) {
       const subscribed = load('pushSubscribed', false);
-      statusEl.textContent = subscribed
-        ? '✅ Actives — tu recevras des rappels même app fermée'
-        : '⚠️ Permission OK — activation en cours…';
+      statusEl.innerHTML = subscribed
+        ? '✅ Actives — rappels reçus même app fermée !'
+        : '⚠️ Permission OK — en cours d\'activation…';
       statusEl.className = 'notif-status notif-status-ok';
-    } else {
-      statusEl.textContent = '💤 Désactivées';
+      if (guideEl) guideEl.style.display = 'none';
+    } else if (Notification.permission === 'default') {
+      statusEl.innerHTML = '💤 Désactivées — active le rappel et enregistre';
       statusEl.className = 'notif-status notif-status-off';
+      if (guideEl) guideEl.style.display = 'none';
+    } else {
+      statusEl.innerHTML = '💤 Désactivées';
+      statusEl.className = 'notif-status notif-status-off';
+      if (guideEl) guideEl.style.display = 'none';
     }
   }
 

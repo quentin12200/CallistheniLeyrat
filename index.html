@@ -418,6 +418,32 @@
 
       <div id="notifStatus" class="notif-status notif-status-off">💤 Désactivées</div>
 
+      <!-- Guide déblocage notifications -->
+      <div id="notifGuide" class="notif-guide" style="display:none;">
+        <div class="notif-guide-title">Comment autoriser les notifications ?</div>
+
+        <div class="notif-guide-browser">
+          <div class="notif-guide-browser-name">🟢 Chrome (recommandé)</div>
+          <ol class="notif-guide-steps">
+            <li>Tape les <strong>3 points</strong> en haut à droite</li>
+            <li>→ <strong>Paramètres</strong> → <strong>Paramètres du site</strong></li>
+            <li>→ <strong>Notifications</strong></li>
+            <li>Trouve ce site et mets-le sur <strong>Autoriser</strong></li>
+            <li>Reviens ici et active le rappel</li>
+          </ol>
+        </div>
+
+        <div class="notif-guide-browser" style="margin-top:10px;">
+          <div class="notif-guide-browser-name">🔵 Edge (moins fiable pour les notifications)</div>
+          <ol class="notif-guide-steps">
+            <li>Tape les <strong>3 points</strong> → <strong>Paramètres</strong></li>
+            <li>→ <strong>Confidentialité</strong> → <strong>Notifications</strong></li>
+            <li>Autorise ce site</li>
+          </ol>
+          <div class="notif-guide-tip">💡 Pour de meilleures notifications, installe <strong>Chrome</strong> et ouvre l'app dedans.</div>
+        </div>
+      </div>
+
       <div class="settings-row" style="margin-top:10px;">
         <button class="btn btn-outline" style="width:100%;font-size:.85rem;" onclick="testNotification()">
           🔔 Envoyer une notification test
