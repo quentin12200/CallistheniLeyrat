@@ -1612,8 +1612,9 @@ function renderCalendar() {
     if (!isBeforeStart) {
       const shortTitle = title === 'Repos' ? 'Repos' : title.split(' — ')[0].split(' / ')[0].slice(0, 10);
       cellContent = `<div class="cal-cell-num">${d}</div>${shortTitle ? `<div class="cal-cell-label">${shortTitle}</div>` : ''}`;
-      // Case manquée → clic pour rattraper
-      if (isPast && !isBeforeStart && !isRestDay(diffDays) && !isDone(diffDays)) {
+      // Case manquée → clic pour rattraper (on utilise w.isRest car le jour de repos change selon le cycle)
+      const wCheck = workout(diffDays);
+      if (isPast && !isBeforeStart && !wCheck.isRest && !isDone(diffDays)) {
         clickAttr = `onclick="openCatchUpModal(${diffDays}, '${title.replace(/'/g,"\\'")}')"`;
         cellContent += `<div class="cal-cell-catchup">↩</div>`;
       }
