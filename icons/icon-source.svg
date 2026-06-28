@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Fond rouge -->
+  <rect width="512" height="512" rx="96" fill="#d71920"/>
+
+  <!-- Silhouette torse musclé — blanc -->
+  <g fill="white" transform="translate(256,256)">
+
+    <!-- Cou -->
+    <rect x="-28" y="-190" width="56" height="50" rx="14"/>
+
+    <!-- Épaules larges -->
+    <ellipse cx="-120" cy="-148" rx="52" ry="38"/>
+    <ellipse cx="120" cy="-148" rx="52" ry="38"/>
+
+    <!-- Pectoraux gauche -->
+    <ellipse cx="-70" cy="-118" rx="68" ry="52"/>
+    <!-- Pectoraux droit -->
+    <ellipse cx="70" cy="-118" rx="68" ry="52"/>
+
+    <!-- Tronc central (fond) -->
+    <rect x="-80" y="-145" width="160" height="240" rx="30"/>
+
+    <!-- Ligne centrale pecs -->
+    <rect x="-7" y="-155" width="14" height="100" rx="7" fill="#d71920"/>
+
+    <!-- Ligne sous-pectorale -->
+    <rect x="-88" y="-72" width="176" height="12" rx="6" fill="#d71920"/>
+
+    <!-- ABDOMINAUX — 3 rangées x 2 colonnes -->
+    <!-- Rangée 1 -->
+    <rect x="-72" y="-58" width="60" height="42" rx="12" fill="#d71920"/>
+    <rect x="12" y="-58" width="60" height="42" rx="12" fill="#d71920"/>
+    <!-- Ligne verticale centre -->
+    <rect x="-7" y="-58" width="14" height="42" rx="7" fill="#d71920"/>
+
+    <!-- Rangée 2 -->
+    <rect x="-72" y="-4" width="60" height="42" rx="12" fill="#d71920"/>
+    <rect x="12" y="-4" width="60" height="42" rx="12" fill="#d71920"/>
+    <rect x="-7" y="-4" width="14" height="42" rx="7" fill="#d71920"/>
+
+    <!-- Rangée 3 -->
+    <rect x="-66" y="50" width="54" height="38" rx="11" fill="#d71920"/>
+    <rect x="12" y="50" width="54" height="38" rx="11" fill="#d71920"/>
+    <rect x="-7" y="50" width="14" height="38" rx="7" fill="#d71920"/>
+
+    <!-- Hanches / bassin -->
+    <ellipse cx="0" cy="104" rx="76" ry="26"/>
+
+    <!-- Obliques gauche -->
+    <ellipse cx="-88" cy="30" rx="24" ry="60" transform="rotate(-15 -88 30)"/>
+    <!-- Obliques droit -->
+    <ellipse cx="88" cy="30" rx="24" ry="60" transform="rotate(15 88 30)"/>
+
+    <!-- Bras gauche (haut) -->
+    <ellipse cx="-152" cy="-60" rx="32" ry="70" transform="rotate(8 -152 -60)"/>
+    <!-- Bras droit (haut) -->
+    <ellipse cx="152" cy="-60" rx="32" ry="70" transform="rotate(-8 152 -60)"/>
+
+    <!-- Biceps relief gauche -->
+    <ellipse cx="-155" cy="-82" rx="20" ry="28" fill="#e8e8e8" opacity="0.3"/>
+    <!-- Biceps relief droit -->
+    <ellipse cx="155" cy="-82" rx="20" ry="28" fill="#e8e8e8" opacity="0.3"/>
+
+  </g>
+
+  <!-- Petit "C" stylisé en bas à droite -->
+  <text x="390" y="470" font-family="Arial Black, sans-serif" font-size="64" font-weight="900" fill="white" opacity="0.25">C</text>
+</svg>
