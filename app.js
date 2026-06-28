@@ -1569,16 +1569,76 @@ function renderCalendar() {
 
     // Afficher label workout/repos dans la cellule (passé, aujourd'hui, et futur)
     let cellContent = '';
+    let clickAttr = '';
     if (!isBeforeStart) {
       const shortTitle = title === 'Repos' ? 'Repos' : title.split(' — ')[0].split(' / ')[0].slice(0, 10);
       cellContent = `<div class="cal-cell-num">${d}</div>${shortTitle ? `<div class="cal-cell-label">${shortTitle}</div>` : ''}`;
+      // Case manquée → clic pour rattraper
+      if (isPast && !isBeforeStart && !isRestDay(diffDays) && !isDone(diffDays)) {
+        clickAttr = `onclick="openCatchUpModal(${diffDays}, '${title.replace(/'/g,"\\'")}')"`;
+        cellContent += `<div class="cal-cell-catchup">↩</div>`;
+      }
     } else {
       cellContent = String(d);
     }
-    html += `<div class="${cls}" title="${title}">${cellContent}</div>`;
+    html += `<div class="${cls}" title="${title}" ${clickAttr}>${cellContent}</div>`;
   }
 
   document.getElementById('calGrid').innerHTML = html;
+}
+
+function openCatchUpModal(day, title) {
+  const existing = document.getElementById('catchUpModal');
+  if (existing) existing.remove();
+
+  const modal = document.createElement('div');
+  modal.id = 'catchUpModal';
+  modal.style.cssText = `
+    position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;
+    display:flex;align-items:flex-end;justify-content:center;`;
+  modal.innerHTML = `
+    <div style="background:#fff;border-radius:20px 20px 0 0;padding:24px 20px 40px;width:100%;max-width:480px;">
+      <div style="font-size:1.1rem;font-weight:900;margin-bottom:6px;">↩ Rattraper la séance</div>
+      <div style="font-size:0.9rem;color:#666;margin-bottom:20px;">Jour ${day} — ${title}</div>
+      <p style="font-size:0.85rem;color:#444;margin-bottom:20px;line-height:1.5;">
+        Tu peux faire cette séance maintenant et la marquer comme complétée.
+        La régularité, c'est aussi savoir rattraper ! 💪
+      </p>
+      <button onclick="catchUpWorkout(${day})" style="
+        width:100%;padding:14px;background:#d71920;color:#fff;border:none;
+        border-radius:12px;font-size:1rem;font-weight:900;cursor:pointer;margin-bottom:10px;">
+        ▶ Faire la séance maintenant
+      </button>
+      <button onclick="catchUpMarkDone(${day})" style="
+        width:100%;padding:14px;background:#f0f0f0;color:#333;border:none;
+        border-radius:12px;font-size:0.95rem;font-weight:700;cursor:pointer;margin-bottom:10px;">
+        ✓ Marquer comme faite (déjà réalisée)
+      </button>
+      <button onclick="document.getElementById('catchUpModal').remove()" style="
+        width:100%;padding:12px;background:none;color:#888;border:none;
+        font-size:0.9rem;cursor:pointer;">
+        Annuler
+      </button>
+    </div>`;
+  modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+  document.body.appendChild(modal);
+}
+
+function catchUpWorkout(day) {
+  document.getElementById('catchUpModal')?.remove();
+  // Ouvrir l'overlay avec les exercices du jour passé
+  const w = workout(day, getDiffOffset());
+  if (!w.list || w.list.length === 0) return;
+  // Stocker le jour cible pour markDone au finish
+  woState._catchUpDay = day;
+  openWorkoutOverlay(0, day);
+}
+
+function catchUpMarkDone(day) {
+  document.getElementById('catchUpModal')?.remove();
+  markDone(day, 'ok');
+  showToast(`Séance du jour ${day} validée ✓`);
+  renderCalendar();
 }
 
 function calPrev() {
@@ -1703,42 +1763,32 @@ function scheduleNotifications() {
   if (next <= now) next.setDate(next.getDate() + 1);
   const delay = next - now;
 
+  const daysSince = getDaysSinceLastSession();
   const streak = getStreak();
-  const body = streak > 1
-    ? `Plus qu'une séance pour battre ton record de ${streak} jours ! Tu assures.`
-    : 'C\'est l\'heure de ta séance du jour. Ton futur toi te remerciera ! 💪';
+  const body = getMotivationMsg(daysSince, streak);
 
+  // Stocker l'heure configurée dans SW pour periodic sync
   navigator.serviceWorker.ready.then(reg => {
-    reg.active?.postMessage({
-      type: 'SCHEDULE_NOTIFICATION',
-      title: 'CallistheniLeyrat — Séance du jour 🏋️',
-      body,
-      delay
-    });
-  });
-
-  // Relance bienveillante si absence
-  const daysSinceLastSession = getDaysSinceLastSession();
-  if (daysSinceLastSession >= 1) {
-    let relanceBody = null;
-    if (daysSinceLastSession >= 7) {
-      relanceBody = 'Ça fait un moment, et c\'est ok. Reprends quand tu veux, en douceur. On est là ! 🤗';
-    } else if (daysSinceLastSession >= 3) {
-      relanceBody = 'Un peu de temps s\'est passé — pas de jugement ! Un petit retour quand tu veux. 💪';
-    } else if (daysSinceLastSession >= 1) {
-      relanceBody = 'Petite pensée pour ta séance d\'hier — à toi de décider quand tu reprends !';
-    }
-    if (relanceBody) {
-      navigator.serviceWorker.ready.then(reg => {
-        reg.active?.postMessage({
-          type: 'SCHEDULE_NOTIFICATION',
-          title: 'On reprend en douceur ? 🌱',
-          body: relanceBody,
-          delay: delay + 3600000 // 1h après la notif principale
-        });
+    // Envoi au SW pour le setTimeout de court terme (app ouverte)
+    if (reg.active) {
+      reg.active.postMessage({
+        type: 'SCHEDULE_NOTIFICATION',
+        title: 'CallistheniLeyrat 🏋️',
+        body,
+        delay,
+        notifTime: timeStr,
+        daysSince,
+        streak
       });
     }
-  }
+    // Periodic Background Sync (Android Chrome uniquement)
+    if ('periodicSync' in reg) {
+      reg.periodicSync.register('daily-workout-reminder', { minInterval: 60 * 60 * 1000 })
+        .catch(() => {});
+    }
+  }).catch(() => {});
+
+  startNotifWatcher();
 }
 
 function getDaysSinceLastSession() {
@@ -1802,8 +1852,11 @@ function selectProfile(user) {
   if (!isDone(dayNumber())) requestWakeLock();
   // Sync depuis le cloud (background — ne bloque pas l'affichage)
   syncFromCloud();
-  // Feature 6: vérifier si une notification doit être envoyée maintenant
-  setTimeout(checkAndFireNotificationIfDue, 1000);
+  // Démarrer le watcher de notification (vérifie chaque minute si c'est l'heure)
+  setTimeout(() => {
+    checkAndFireNotificationIfDue();
+    startNotifWatcher();
+  }, 1000);
 }
 
 function switchProfile() {
@@ -2243,42 +2296,66 @@ function handleSaveMeasure() {
   renderDashboard();
 }
 
-// ─── Vérification notification au chargement (Feature 6) ─────
+// ─── Messages motivants ───────────────────────────────────────
+const MOTIVATION_MSGS = [
+  "La régularité, c'est ton super-pouvoir. Pas besoin d'être parfait, juste présent. 💪",
+  "Chaque séance compte, même la plus courte. Tu n'as pas à tout déchirer aujourd'hui.",
+  "Le secret du sport ? Recommencer. Encore. Et encore. Tu le sais déjà. 🔥",
+  "Pas motivé ? Normal. Les champions s'entraînent aussi les jours sans envie.",
+  "5 minutes suffisent pour démarrer. Et souvent, on continue bien plus. 🚀",
+  "Ton corps se souvient de chaque effort. Même ceux que tu as oublié.",
+  "La progression ne se voit pas tous les jours. Mais elle est là, invisible, constante.",
+  "Ce n'est pas une question de force. C'est une question d'habitude. 🌱",
+  "Quand tu ne veux pas, c'est exactement le bon moment. C'est là que ça compte.",
+  "Chaque jour sans séance est juste un repos de plus. Reprends quand tu es prêt. ❤️",
+  "Tu n'es pas en retard. Tu reprends là où tu en es. C'est suffisant.",
+  "Une séance moyenne vaut mieux que pas de séance. Lance-toi. 🎯"
+];
+
+function getMotivationMsg(daysSince, streak) {
+  if (daysSince === 0 && streak >= 7) return `${streak} jours de suite — tu es en feu ! Garde ce rythme. 🔥`;
+  if (daysSince === 0 && streak >= 3) return `${streak} jours consécutifs ! La régularité paie. Continue. ⭐`;
+  if (daysSince === 0) return MOTIVATION_MSGS[Math.floor(Math.random() * 6)];
+  if (daysSince === 1) return "Hier c'était repos, aujourd'hui c'est ton jour. Allez, on y va. 💪";
+  if (daysSince === 2) return "2 jours de pause, ça fait du bien. Et maintenant ? On repart en douceur. 🌱";
+  if (daysSince >= 7) return "Peu importe le temps passé. Ce qui compte c'est de reprendre. Pas de jugement. ❤️";
+  return `${daysSince} jours sans séance — et c'est ok. Reprends à ton rythme. Tu sais que tu peux. 💪`;
+}
+
+// ─── Vérification notification au chargement ─────────────────
 function checkAndFireNotificationIfDue() {
-  // Needs a user context; called after selectProfile
   if (!currentUser || currentUser === 'invite') return;
   if (!('Notification' in window) || Notification.permission !== 'granted') return;
   if (!load('notifEnabled', false)) return;
 
+  const today = todayISO();
   const notifTime = load('notifTime', '08:00');
   const [h, m] = notifTime.split(':').map(Number);
   const now = new Date();
   const nowMins = now.getHours() * 60 + now.getMinutes();
   const targetMins = h * 60 + m;
-  const diff = nowMins - targetMins;
 
-  // Fire if within a ±5 min window around the scheduled time
-  if (diff < -5 || diff > 5) return;
+  // Si l'heure de rappel est passée ET la séance n'est pas faite ET pas encore notifié aujourd'hui
+  const sessionDone = isDone(dayNumber());
+  const alreadySent = load('notifSentDate') === today;
 
-  const today = todayISO();
-  if (load('notifSentDate') === today) return; // already sent today
+  if (nowMins >= targetMins && !sessionDone && !alreadySent) {
+    store('notifSentDate', today);
+    const daysSince = getDaysSinceLastSession();
+    const streak = getStreak();
+    const body = getMotivationMsg(daysSince, streak);
+    navigator.serviceWorker.ready.then(reg => {
+      reg.showNotification('CallistheniLeyrat 🏋️', { body, icon: '/icons/icon-192.png', badge: '/icons/icon-192.png', vibrate: [200, 100, 200], tag: 'callistheni-reminder' });
+    }).catch(() => {});
+  }
+}
 
-  store('notifSentDate', today);
-
-  const streak = getStreak();
-  const body = streak > 1
-    ? `Plus qu'une séance pour battre ton record de ${streak} jours ! Tu assures.`
-    : 'C\'est l\'heure de ta séance du jour. Ton futur toi te remerciera ! 💪';
-
-  navigator.serviceWorker.ready.then(reg => {
-    reg.showNotification('CallistheniLeyrat — Séance du jour 🏋️', {
-      body,
-      icon: '/icons/icon-192.png',
-      badge: '/icons/icon-192.png',
-      vibrate: [200, 100, 200],
-      tag: 'callistheni-reminder'
-    });
-  }).catch(() => {});
+// Vérifie toutes les minutes si c'est l'heure de notifier
+function startNotifWatcher() {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  if (!load('notifEnabled', false)) return;
+  setInterval(checkAndFireNotificationIfDue, 60 * 1000);
+  checkAndFireNotificationIfDue();
 }
 
 // ─── Workout Overlay (séance plein écran) ─────────────────────
@@ -2289,7 +2366,8 @@ const woState = {
   timers: {},         // per idx: {doneSets, running, remaining, phase:'work'|'rest', interval}
   sessionStart: null,
   sessionInterval: null,
-  stretchTimers: {}  // { idx: intervalId }
+  stretchTimers: {},  // { idx: intervalId }
+  _catchUpDay: null   // jour de rattrapage (null = aujourd'hui)
 };
 
 const WO_REST_DURATION = 30;
@@ -2323,8 +2401,9 @@ function woStartStretch(idx) {
   }, 1000);
 }
 
-function openWorkoutOverlay(startIdx = 0) {
-  const today = dayNumber();
+function openWorkoutOverlay(startIdx = 0, forDay = null) {
+  const today = forDay || dayNumber();
+  woState._catchUpDay = forDay || null;
   const w = workout(today, getDiffOffset());
   if (!w.list || w.list.length === 0) return;
 
@@ -2694,7 +2773,12 @@ function woShowCompletion() {
 
   // Trigger existing completion logic
   checkBadges();
-  markDone(dayNumber(), selectedFeedback);
+  const targetDay = woState._catchUpDay || dayNumber();
+  markDone(targetDay, selectedFeedback);
+  if (woState._catchUpDay) {
+    woState._catchUpDay = null;
+    setTimeout(() => { renderCalendar(); renderHome(); }, 500);
+  }
 
   const overlay = document.getElementById('workoutOverlay');
   const comp = document.createElement('div');
