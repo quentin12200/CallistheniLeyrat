@@ -961,6 +961,17 @@ html, body {
 .settings-toggle input:checked + .settings-toggle-track { background: var(--red); }
 .settings-toggle input:checked + .settings-toggle-track::before { transform: translateX(20px); }
 
+.notif-status {
+  font-size: .82rem;
+  font-weight: 700;
+  padding: 10px 14px;
+  border-radius: 10px;
+  margin: 4px 0 2px;
+}
+.notif-status-ok { background: #d1fae5; color: #065f46; }
+.notif-status-denied { background: #fee2e2; color: #991b1b; }
+.notif-status-off { background: var(--bg2); color: var(--txt2); }
+
 .settings-rpg-info {
   font-size: 1rem;
   font-weight: 700;

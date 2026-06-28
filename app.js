@@ -1707,6 +1707,27 @@ function renderSettings() {
   const iw = load('initWeight'); if (iw && document.getElementById('settingInitWeight')) document.getElementById('settingInitWeight').value = iw;
   const bh = load('bodyHeight'); if (bh && document.getElementById('settingBodyHeight')) document.getElementById('settingBodyHeight').value = bh;
 
+  // Statut notifications
+  const statusEl = document.getElementById('notifStatus');
+  if (statusEl) {
+    if (!('Notification' in window)) {
+      statusEl.textContent = '❌ Non supporté sur cet appareil';
+      statusEl.className = 'notif-status notif-status-off';
+    } else if (Notification.permission === 'denied') {
+      statusEl.textContent = '🚫 Bloquées — autorise dans les réglages du navigateur';
+      statusEl.className = 'notif-status notif-status-denied';
+    } else if (Notification.permission === 'granted' && load('notifEnabled', false)) {
+      const subscribed = load('pushSubscribed', false);
+      statusEl.textContent = subscribed
+        ? '✅ Actives — tu recevras des rappels même app fermée'
+        : '⚠️ Permission OK — activation en cours…';
+      statusEl.className = 'notif-status notif-status-ok';
+    } else {
+      statusEl.textContent = '💤 Désactivées';
+      statusEl.className = 'notif-status notif-status-off';
+    }
+  }
+
   // Ajouter mesure rapide dans les réglages
   const today = new Date().toISOString().slice(0, 10);
   const qm = document.getElementById('quickMeasureDate');
@@ -1740,17 +1761,23 @@ function saveSettings() {
   if (initWeight) store('initWeight', parseFloat(initWeight));
   if (bodyHeight) store('bodyHeight', parseFloat(bodyHeight));
 
-  // Feature 6: demander permission si notifications activées
+  // Demander permission et activer les notifications
   if (document.getElementById('settingNotifEnabled').checked) {
     if (!('Notification' in window)) {
       showToast('Les notifications ne sont pas supportées sur cet appareil.');
+    } else if (Notification.permission === 'denied') {
+      showToast('🚫 Notifications bloquées — autorise-les dans les réglages du navigateur.');
     } else if (Notification.permission === 'default') {
       Notification.requestPermission().then(p => {
-        if (p === 'granted') scheduleNotifications();
+        if (p === 'granted') { scheduleNotifications(); setTimeout(renderSettings, 500); }
+        else { showToast('Permission refusée — notifications désactivées.'); }
       });
     } else if (Notification.permission === 'granted') {
       scheduleNotifications();
+      setTimeout(renderSettings, 1000);
     }
+  } else {
+    unsubscribeFromPush();
   }
 
   showToast('Réglages enregistrés ✓');
@@ -1761,51 +1788,83 @@ function saveSettings() {
 }
 
 // ─── Notifications ────────────────────────────────────────────
+const VAPID_PUBLIC_KEY = 'BHUZ3uBIMB_Lwk3Cv_SR2WBGcolTLHUQ37g7A5Sz6FEjwo5qqtuvNlackWhx5JfwAUMiV_egK-u4Ecaeo9iEYow';
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = atob(base64);
+  return Uint8Array.from([...rawData].map(c => c.charCodeAt(0)));
+}
+
 function requestNotificationPermission() {
   if (!('Notification' in window)) return;
   if (Notification.permission === 'default') {
     Notification.requestPermission().then(p => {
       if (p === 'granted') scheduleNotifications();
     });
+  } else if (Notification.permission === 'granted') {
+    scheduleNotifications();
   }
+}
+
+async function subscribeToPushIfNeeded() {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+  if (Notification.permission !== 'granted') return;
+  if (!load('notifEnabled', false)) return;
+  if (!currentUser || currentUser === 'invite') return;
+
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) {
+      sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+      });
+    }
+    // Enregistrer côté serveur
+    const pin = localStorage.getItem(currentUser + '_pin');
+    if (pin) {
+      fetch('/api/push-subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user: currentUser, pin, subscription: sub.toJSON() }),
+      }).catch(() => {});
+    }
+    store('pushSubscribed', true);
+    return sub;
+  } catch (e) {
+    store('pushSubscribed', false);
+  }
+}
+
+async function unsubscribeFromPush() {
+  if (!('serviceWorker' in navigator)) return;
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription();
+    if (sub) {
+      const pin = localStorage.getItem(currentUser + '_pin');
+      if (pin) {
+        fetch('/api/push-subscribe', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user: currentUser, pin, endpoint: sub.endpoint }),
+        }).catch(() => {});
+      }
+      await sub.unsubscribe();
+    }
+    store('pushSubscribed', false);
+  } catch (e) {}
 }
 
 function scheduleNotifications() {
   if (!('serviceWorker' in navigator) || Notification.permission !== 'granted') return;
   if (!load('notifEnabled', false)) return;
 
-  const timeStr = load('notifTime', '08:00');
-  const [h, m] = timeStr.split(':').map(Number);
-  const now = new Date();
-  const next = new Date(now);
-  next.setHours(h, m, 0, 0);
-  if (next <= now) next.setDate(next.getDate() + 1);
-  const delay = next - now;
-
-  const daysSince = getDaysSinceLastSession();
-  const streak = getStreak();
-  const body = getMotivationMsg(daysSince, streak);
-
-  // Stocker l'heure configurée dans SW pour periodic sync
-  navigator.serviceWorker.ready.then(reg => {
-    // Envoi au SW pour le setTimeout de court terme (app ouverte)
-    if (reg.active) {
-      reg.active.postMessage({
-        type: 'SCHEDULE_NOTIFICATION',
-        title: 'CallistheniLeyrat 🏋️',
-        body,
-        delay,
-        notifTime: timeStr,
-        daysSince,
-        streak
-      });
-    }
-    // Periodic Background Sync (Android Chrome uniquement)
-    if ('periodicSync' in reg) {
-      reg.periodicSync.register('daily-workout-reminder', { minInterval: 60 * 60 * 1000 })
-        .catch(() => {});
-    }
-  }).catch(() => {});
+  // S'abonner au Web Push (notifications background réelles)
+  subscribeToPushIfNeeded();
 
   startNotifWatcher();
 }
@@ -1871,10 +1930,13 @@ function selectProfile(user) {
   if (!isDone(dayNumber())) requestWakeLock();
   // Sync depuis le cloud (background — ne bloque pas l'affichage)
   syncFromCloud();
-  // Démarrer le watcher de notification (vérifie chaque minute si c'est l'heure)
+  // Démarrer le watcher de notification et s'abonner au push si permission déjà accordée
   setTimeout(() => {
     checkAndFireNotificationIfDue();
     startNotifWatcher();
+    if (Notification.permission === 'granted' && load('notifEnabled', false)) {
+      subscribeToPushIfNeeded();
+    }
   }, 1000);
 }
 
@@ -2375,6 +2437,28 @@ function startNotifWatcher() {
   if (!load('notifEnabled', false)) return;
   setInterval(checkAndFireNotificationIfDue, 60 * 1000);
   checkAndFireNotificationIfDue();
+}
+
+function testNotification() {
+  if (!('Notification' in window)) { showToast('Notifications non supportées.'); return; }
+  if (Notification.permission !== 'granted') {
+    showToast('Active les notifications d\'abord dans les réglages.');
+    return;
+  }
+  const msgs = [
+    "Test réussi ! Tu recevras tes rappels comme ça. 💪",
+    "Voilà à quoi ressemble un rappel CallistheniLeyrat ! 🔥",
+  ];
+  navigator.serviceWorker.ready.then(reg => {
+    reg.showNotification('CallistheniLeyrat 🏋️', {
+      body: msgs[Math.floor(Math.random() * msgs.length)],
+      icon: '/icons/icon-192.png',
+      badge: '/icons/icon-192.png',
+      vibrate: [200, 100, 200],
+      tag: 'callistheni-test',
+    });
+    showToast('Notification envoyée !');
+  }).catch(() => showToast('Erreur — recharge l\'app.'));
 }
 
 // ─── Workout Overlay (séance plein écran) ─────────────────────
