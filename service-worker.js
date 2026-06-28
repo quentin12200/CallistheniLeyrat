@@ -129,6 +129,23 @@ async function fireReminderIfDue() {
   });
 }
 
+// Push Web (VAPID) — notification reçue même app fermée
+self.addEventListener('push', e => {
+  let data = { title: 'CallistheniLeyrat 🏋️', body: MOTIVATION_MSGS_SW[0] };
+  try { if (e.data) data = e.data.json(); } catch {}
+  e.waitUntil(
+    self.registration.showNotification(data.title, {
+      body: data.body,
+      icon: '/icons/icon-192.png',
+      badge: '/icons/icon-192.png',
+      vibrate: [200, 100, 200],
+      tag: 'callistheni-reminder',
+      requireInteraction: true,
+      actions: [{ action: 'open', title: '▶ Lancer la séance' }]
+    })
+  );
+});
+
 // Clic sur la notification → ouvre l'app
 self.addEventListener('notificationclick', e => {
   e.notification.close();
