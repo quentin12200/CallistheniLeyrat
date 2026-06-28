@@ -1569,16 +1569,76 @@ function renderCalendar() {
 
     // Afficher label workout/repos dans la cellule (passé, aujourd'hui, et futur)
     let cellContent = '';
+    let clickAttr = '';
     if (!isBeforeStart) {
       const shortTitle = title === 'Repos' ? 'Repos' : title.split(' — ')[0].split(' / ')[0].slice(0, 10);
       cellContent = `<div class="cal-cell-num">${d}</div>${shortTitle ? `<div class="cal-cell-label">${shortTitle}</div>` : ''}`;
+      // Case manquée → clic pour rattraper
+      if (isPast && !isBeforeStart && !isRestDay(diffDays) && !isDone(diffDays)) {
+        clickAttr = `onclick="openCatchUpModal(${diffDays}, '${title.replace(/'/g,"\\'")}')"`;
+        cellContent += `<div class="cal-cell-catchup">↩</div>`;
+      }
     } else {
       cellContent = String(d);
     }
-    html += `<div class="${cls}" title="${title}">${cellContent}</div>`;
+    html += `<div class="${cls}" title="${title}" ${clickAttr}>${cellContent}</div>`;
   }
 
   document.getElementById('calGrid').innerHTML = html;
+}
+
+function openCatchUpModal(day, title) {
+  const existing = document.getElementById('catchUpModal');
+  if (existing) existing.remove();
+
+  const modal = document.createElement('div');
+  modal.id = 'catchUpModal';
+  modal.style.cssText = `
+    position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;
+    display:flex;align-items:flex-end;justify-content:center;`;
+  modal.innerHTML = `
+    <div style="background:#fff;border-radius:20px 20px 0 0;padding:24px 20px 40px;width:100%;max-width:480px;">
+      <div style="font-size:1.1rem;font-weight:900;margin-bottom:6px;">↩ Rattraper la séance</div>
+      <div style="font-size:0.9rem;color:#666;margin-bottom:20px;">Jour ${day} — ${title}</div>
+      <p style="font-size:0.85rem;color:#444;margin-bottom:20px;line-height:1.5;">
+        Tu peux faire cette séance maintenant et la marquer comme complétée.
+        La régularité, c'est aussi savoir rattraper ! 💪
+      </p>
+      <button onclick="catchUpWorkout(${day})" style="
+        width:100%;padding:14px;background:#d71920;color:#fff;border:none;
+        border-radius:12px;font-size:1rem;font-weight:900;cursor:pointer;margin-bottom:10px;">
+        ▶ Faire la séance maintenant
+      </button>
+      <button onclick="catchUpMarkDone(${day})" style="
+        width:100%;padding:14px;background:#f0f0f0;color:#333;border:none;
+        border-radius:12px;font-size:0.95rem;font-weight:700;cursor:pointer;margin-bottom:10px;">
+        ✓ Marquer comme faite (déjà réalisée)
+      </button>
+      <button onclick="document.getElementById('catchUpModal').remove()" style="
+        width:100%;padding:12px;background:none;color:#888;border:none;
+        font-size:0.9rem;cursor:pointer;">
+        Annuler
+      </button>
+    </div>`;
+  modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+  document.body.appendChild(modal);
+}
+
+function catchUpWorkout(day) {
+  document.getElementById('catchUpModal')?.remove();
+  // Ouvrir l'overlay avec les exercices du jour passé
+  const w = workout(day, getDiffOffset());
+  if (!w.list || w.list.length === 0) return;
+  // Stocker le jour cible pour markDone au finish
+  woState._catchUpDay = day;
+  openWorkoutOverlay(0, day);
+}
+
+function catchUpMarkDone(day) {
+  document.getElementById('catchUpModal')?.remove();
+  markDone(day, 'ok');
+  showToast(`Séance du jour ${day} validée ✓`);
+  renderCalendar();
 }
 
 function calPrev() {
@@ -2306,7 +2366,8 @@ const woState = {
   timers: {},         // per idx: {doneSets, running, remaining, phase:'work'|'rest', interval}
   sessionStart: null,
   sessionInterval: null,
-  stretchTimers: {}  // { idx: intervalId }
+  stretchTimers: {},  // { idx: intervalId }
+  _catchUpDay: null   // jour de rattrapage (null = aujourd'hui)
 };
 
 const WO_REST_DURATION = 30;
@@ -2340,8 +2401,9 @@ function woStartStretch(idx) {
   }, 1000);
 }
 
-function openWorkoutOverlay(startIdx = 0) {
-  const today = dayNumber();
+function openWorkoutOverlay(startIdx = 0, forDay = null) {
+  const today = forDay || dayNumber();
+  woState._catchUpDay = forDay || null;
   const w = workout(today, getDiffOffset());
   if (!w.list || w.list.length === 0) return;
 
@@ -2711,7 +2773,12 @@ function woShowCompletion() {
 
   // Trigger existing completion logic
   checkBadges();
-  markDone(dayNumber(), selectedFeedback);
+  const targetDay = woState._catchUpDay || dayNumber();
+  markDone(targetDay, selectedFeedback);
+  if (woState._catchUpDay) {
+    woState._catchUpDay = null;
+    setTimeout(() => { renderCalendar(); renderHome(); }, 500);
+  }
 
   const overlay = document.getElementById('workoutOverlay');
   const comp = document.createElement('div');
