@@ -713,43 +713,46 @@ html, body {
 .cal-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 4px;
+  gap: 3px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .cal-day-name {
   text-align: center;
-  font-size: 0.7rem;
+  font-size: 0.65rem;
   color: var(--txt2);
-  padding: 4px 0;
+  padding: 3px 0 5px;
   font-weight: 700;
 }
 
 .cal-cell {
-  border-radius: 10px;
+  border-radius: 8px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 4px 2px;
-  font-size: 0.8rem;
-  font-weight: 700;
-  min-height: 52px;
+  justify-content: flex-start;
+  padding: 3px 1px 2px;
+  aspect-ratio: 1 / 1.1;
   position: relative;
   cursor: pointer;
   border: 2px solid transparent;
   background: var(--card2);
   color: var(--txt2);
   transition: transform 0.1s;
+  overflow: hidden;
+  min-width: 0;
 }
-.cal-cell:active { transform: scale(0.93); }
+.cal-cell:active { transform: scale(0.9); }
 
-.cal-cell.empty { background: transparent; cursor: default; }
+.cal-cell.empty { background: transparent; cursor: default; border: none; }
 .cal-cell.done { background: #16a34a; color: #fff; border-color: #15803d; }
-.cal-cell.missed { background: #dc2626; color: #fff; border-color: #b91c1c; }
+.cal-cell.missed { background: #dc2626; color: #fff; border-color: #b91c1c; cursor: pointer; }
 .cal-cell.rest { background: #2563eb; color: #fff; border-color: #1d4ed8; }
 .cal-cell.today { border-color: var(--warn) !important; color: #92400e; background: #fde68a; font-weight: 900; }
-.cal-cell.future { opacity: 0.55; cursor: default; }
-.cal-cell.future.rest { background: #93c5fd; color: #1e3a8a; border-color: #60a5fa; opacity: 0.7; }
+.cal-cell.future { opacity: 0.5; cursor: default; }
+.cal-cell.future.rest { background: #93c5fd; color: #1e3a8a; border-color: #60a5fa; }
+.cal-cell.missed:active { opacity: 0.75; transform: scale(0.92); }
 
 .cal-legend {
   display: flex;
@@ -1539,38 +1542,35 @@ html, body {
 
 /* ===== Feature 3 : Calendrier labels ===== */
 .cal-cell-num {
-  font-size: 0.7rem;
-  font-weight: 600;
-  position: absolute;
-  top: 3px;
-  left: 5px;
+  font-size: 0.68rem;
+  font-weight: 700;
   line-height: 1;
+  align-self: flex-start;
+  padding-left: 3px;
+  padding-top: 1px;
 }
 
 .cal-cell-label {
-  font-size: 0.6rem;
+  font-size: 0.5rem;
   font-weight: 600;
   text-align: center;
-  margin-top: 16px;
-  opacity: 0.9;
+  opacity: 0.85;
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  padding: 0 2px;
+  padding: 0 1px;
   line-height: 1.2;
+  margin-top: 1px;
 }
 
+/* Icône de rattrapage — bien visible, centré en bas */
 .cal-cell-catchup {
-  font-size: 0.75rem;
-  position: absolute;
-  bottom: 3px;
-  right: 3px;
-  opacity: 0.85;
+  font-size: 0.9rem;
+  line-height: 1;
+  margin-top: auto;
+  padding-bottom: 2px;
 }
-
-.cal-cell.missed { cursor: pointer; }
-.cal-cell.missed:active { opacity: 0.75; transform: scale(0.95); }
 
 /* ===== Feature 1 : Graphique progression ===== */
 .progression-week-labels {
