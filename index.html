@@ -14,87 +14,56 @@
 </head>
 <body>
 
-<!-- ===== Écran de sélection de profil ===== -->
-<div id="profileScreen">
-  <h1>Callisthénie<br>Leyrat</h1>
-  <p>Choisis ton profil pour accéder à ton programme personnalisé.</p>
-  <div class="profile-cards">
-    <button class="profile-btn" onclick="startProfileLogin('quentin')">
-      <div class="profile-avatar quentin">Q</div>
-      <div class="profile-name">Quentin</div>
-    </button>
-    <button class="profile-btn" onclick="startProfileLogin('sophie')">
-      <div class="profile-avatar sophie">S</div>
-      <div class="profile-name">Sophie</div>
-    </button>
+<!-- ===== Écran de connexion Firebase ===== -->
+<div id="loginScreen">
+  <div class="login-logo">
+    <img src="icons/icon-192.png" alt="Logo" class="login-logo-img" />
+    <div class="login-title">Bouge sans complexe</div>
+    <div class="login-subtitle">Ton programme de callisthénie — gratuit, progressif, chez toi.</div>
   </div>
-  <!-- Profils personnalisés (générés par JS) -->
-  <div class="profile-cards" id="customProfileCards" style="display:none;"></div>
 
-  <div class="guest-separator">— ou —</div>
-  <button class="profile-btn profile-btn-guest" onclick="selectProfile('invite')">
-    <div class="profile-avatar guest">👤</div>
-    <div class="profile-name">Invité</div>
-    <div class="guest-note">Pour tester l'app — tes données restent sur ce téléphone</div>
-  </button>
-  <button class="profile-btn profile-btn-create" onclick="showCreateProfile()">
-    <div class="profile-avatar create">＋</div>
-    <div class="profile-name">Nouveau profil</div>
-    <div class="guest-note">Créer un profil avec code PIN</div>
-  </button>
-</div>
+  <!-- Formulaire connexion email/mdp -->
+  <div id="loginForm" class="login-card">
+    <button class="login-google-btn" onclick="fbLoginGoogle()">
+      <svg width="20" height="20" viewBox="0 0 48 48" style="margin-right:10px;"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/><path fill="none" d="M0 0h48v48H0z"/></svg>
+      Continuer avec Google
+    </button>
 
-<!-- ===== Écran création de profil ===== -->
-<div id="createProfileScreen" class="hidden">
-  <div class="pin-card">
-    <div class="pin-avatar create" style="font-size:2rem;">＋</div>
-    <div class="pin-title">Créer un profil</div>
-    <div class="pin-subtitle">Choisis un prénom et un code PIN à 4-6 chiffres</div>
-    <input type="text" id="createProfileName" class="pin-input" placeholder="Ton prénom" maxlength="20"
-      autocomplete="off" oninput="onCreateProfileInput()" style="margin-bottom:10px;" />
-    <input type="password" id="createProfilePin" class="pin-input" inputmode="numeric"
-      placeholder="Code PIN (4-6 chiffres)" maxlength="6" autocomplete="off"
-      oninput="onCreateProfileInput()" onkeydown="if(event.key==='Enter')submitCreateProfile()" />
-    <div id="createProfileError" class="pin-error hidden"></div>
-    <div id="createProfileLoading" class="pin-loading hidden">Création en cours…</div>
-    <div class="pin-buttons">
-      <button class="btn btn-secondary" onclick="cancelCreateProfile()">Annuler</button>
-      <button class="btn btn-primary" id="createProfileBtn" onclick="submitCreateProfile()" disabled>Créer</button>
+    <div class="login-divider"><span>ou</span></div>
+
+    <input type="email" id="authEmail" class="login-input" placeholder="Email" autocomplete="email" />
+    <input type="password" id="authPassword" class="login-input" placeholder="Mot de passe" autocomplete="current-password"
+      onkeydown="if(event.key==='Enter')fbLoginEmail()" />
+
+    <div id="authError" class="login-error hidden"></div>
+
+    <button class="btn btn-primary" id="authSubmitBtn" onclick="fbLoginEmail()">Se connecter</button>
+
+    <div class="login-links">
+      <span class="login-link" onclick="fbResetPassword()">Mot de passe oublié ?</span>
+      <span class="login-link" onclick="showRegisterForm()">Créer un compte →</span>
     </div>
+
+    <div class="login-guest-sep">— ou —</div>
+    <button class="login-guest-btn" onclick="fbGuestMode()">Continuer en mode invité</button>
   </div>
-</div>
 
-<!-- ===== Écran saisie PIN ===== -->
-<div id="pinScreen" class="hidden">
-  <div class="pin-card">
-    <div class="pin-avatar" id="pinAvatar"></div>
-    <div class="pin-title" id="pinTitle">Entrez votre PIN</div>
-    <div class="pin-subtitle">6 chiffres pour synchroniser vos données</div>
-    <input
-      type="password"
-      id="pinInput"
-      class="pin-input"
-      inputmode="numeric"
-      maxlength="6"
-      placeholder="● ● ● ● ● ●"
-      autocomplete="off"
-      oninput="onPinInput()"
-      onkeydown="if(event.key==='Enter')submitPin()"
-    />
-    <div id="pinError" class="pin-error hidden">PIN incorrect — réessaie</div>
-    <div id="pinLoading" class="pin-loading hidden">Vérification en cours…</div>
-    <div class="pin-buttons">
-      <button class="btn btn-secondary" onclick="cancelPin()">Annuler</button>
-      <button class="btn btn-primary" id="pinSubmitBtn" onclick="submitPin()" disabled>Valider</button>
-    </div>
-    <div class="pin-forgot" id="pinForgot">
-      🔑 PIN oublié ? <span onclick="showPinForgotMsg()" style="text-decoration:underline;cursor:pointer;">Aide</span>
-    </div>
-    <div id="pinForgotMsg" class="pin-forgot-msg hidden">
-      Contacte <strong>Quentin</strong> — il peut réinitialiser ton accès depuis son panneau d'administration.
-    </div>
-    <div class="pin-offline-note" id="pinOfflineNote" style="display:none;">
-      Mode hors-ligne — vos données locales seront utilisées.
+  <!-- Formulaire inscription -->
+  <div id="registerForm" class="login-card hidden">
+    <div class="login-form-title">Créer un compte</div>
+
+    <input type="text" id="authName" class="login-input" placeholder="Ton prénom" autocomplete="given-name" maxlength="30" />
+    <input type="email" id="regEmail" class="login-input" placeholder="Email" autocomplete="email" />
+    <input type="password" id="regPassword" class="login-input" placeholder="Mot de passe (6 car. min.)" autocomplete="new-password" />
+    <input type="password" id="regConfirm" class="login-input" placeholder="Confirmer le mot de passe" autocomplete="new-password"
+      onkeydown="if(event.key==='Enter')fbRegister()" />
+
+    <div id="authError" class="login-error hidden"></div>
+
+    <button class="btn btn-primary" id="regSubmitBtn" onclick="fbRegister()">Créer mon compte</button>
+
+    <div class="login-links">
+      <span class="login-link" onclick="showLoginForm()">← Retour à la connexion</span>
     </div>
   </div>
 </div>
@@ -106,9 +75,9 @@
   <div class="topbar">
     <span class="topbar-title">💪 CallistheniLeyrat</span>
     <span id="syncIndicator" class="sync-indicator" title="Synchronisation"></span>
-    <button class="topbar-profile" onclick="switchProfile()">
+    <button class="topbar-profile" onclick="fbLogout()">
       <span id="topbarProfileName"></span>
-      <span>⇄</span>
+      <div id="topbarPhoto" class="topbar-photo"></div>
     </button>
   </div>
 
@@ -549,6 +518,11 @@
   <div class="wo-dots" id="woDots"></div>
 </div>
 
+<!-- Firebase compat SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="app.js"></script>
+<script src="firebase-app.js"></script>
 </body>
 </html>
