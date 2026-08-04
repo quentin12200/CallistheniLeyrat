@@ -62,8 +62,17 @@ module.exports = async function handler(req, res) {
   Object.entries(cors()).forEach(([k, v]) => res.setHeader(k, v));
   if (req.method === 'OPTIONS') return res.status(204).end();
 
+  // Parser le body POST proprement (Vercel peut le passer en string ou en objet)
+  let parsedBody = {};
+  if (req.method === 'POST') {
+    parsedBody = req.body || {};
+    if (typeof parsedBody === 'string') {
+      try { parsedBody = JSON.parse(parsedBody); } catch { parsedBody = {}; }
+    }
+  }
+
   // Auth — Quentin uniquement
-  const pin = req.method === 'GET' ? req.query.pin : (req.body?.pin || '');
+  const pin = req.method === 'GET' ? req.query.pin : (parsedBody.pin || '');
   if (!isAdmin(pin)) return res.status(401).json({ ok: false, error: 'Accès refusé' });
 
   // ── GET ?action=users — liste tous les utilisateurs avec leurs stats
@@ -84,15 +93,13 @@ module.exports = async function handler(req, res) {
 
   // ── POST — actions admin
   if (req.method === 'POST') {
-    let body = req.body;
-    if (typeof body === 'string') { try { body = JSON.parse(body); } catch { body = {}; } }
-    const { action, targetUser, newPin } = body || {};
+    const { action, targetUser, newPin } = parsedBody;
 
     // Réinitialiser le PIN d'un utilisateur
     if (action === 'reset-pin') {
       if (!targetUser || !newPin) return res.status(400).json({ ok: false, error: 'Paramètres manquants' });
-      const pinStr = String(newPin);
-      if (pinStr.length < 4) return res.status(400).json({ ok: false, error: 'PIN trop court (4 min)' });
+      const pinStr = String(newPin || '').trim();
+      if (pinStr.length < 6) return res.status(400).json({ ok: false, error: 'PIN trop court — 6 chiffres minimum' });
 
       // Bloquer la réinitialisation des comptes env-var (Quentin/Sophie gérés par env)
       const envPin = process.env['PIN_' + targetUser.toUpperCase()];
