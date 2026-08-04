@@ -22,14 +22,24 @@
     <div class="login-subtitle">Ton programme de callisthénie — gratuit, progressif, chez toi.</div>
   </div>
 
-  <!-- Formulaire connexion email/mdp -->
+  <!-- Formulaire connexion principal -->
   <div id="loginForm" class="login-card">
+    <!-- Boutons OAuth -->
     <button class="login-google-btn" onclick="fbLoginGoogle()">
       <svg width="20" height="20" viewBox="0 0 48 48" style="margin-right:10px;"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/><path fill="none" d="M0 0h48v48H0z"/></svg>
       Continuer avec Google
     </button>
 
-    <div class="login-divider"><span>ou</span></div>
+    <button class="login-microsoft-btn" onclick="fbLoginMicrosoft()">
+      <svg width="20" height="20" viewBox="0 0 21 21" style="margin-right:10px;"><rect x="1" y="1" width="9" height="9" fill="#f25022"/><rect x="11" y="1" width="9" height="9" fill="#7fba00"/><rect x="1" y="11" width="9" height="9" fill="#00a4ef"/><rect x="11" y="11" width="9" height="9" fill="#ffb900"/></svg>
+      Continuer avec Microsoft
+    </button>
+
+    <button class="login-phone-btn" onclick="showPhoneForm()">
+      📱 Continuer par SMS
+    </button>
+
+    <div class="login-divider"><span>ou par email</span></div>
 
     <input type="email" id="authEmail" class="login-input" placeholder="Email" autocomplete="email" />
     <input type="password" id="authPassword" class="login-input" placeholder="Mot de passe" autocomplete="current-password"
@@ -46,6 +56,32 @@
 
     <div class="login-guest-sep">— ou —</div>
     <button class="login-guest-btn" onclick="fbGuestMode()">Continuer en mode invité</button>
+  </div>
+
+  <!-- Formulaire SMS -->
+  <div id="phoneForm" class="login-card hidden">
+    <div class="login-form-title">📱 Connexion par SMS</div>
+
+    <div id="phoneStep1">
+      <input type="tel" id="phoneNumber" class="login-input" placeholder="+33 6 12 34 56 78"
+        autocomplete="tel" onkeydown="if(event.key==='Enter')fbSendSms()" />
+      <div id="recaptcha-container"></div>
+      <div id="authError" class="login-error hidden"></div>
+      <button class="btn btn-primary" id="phoneSendBtn" onclick="fbSendSms()">Envoyer le code SMS</button>
+    </div>
+
+    <div id="phoneStep2" class="hidden">
+      <p style="font-size:.88rem;color:var(--txt2);text-align:center;margin-bottom:8px;">Code reçu par SMS :</p>
+      <input type="text" id="smsCode" class="login-input" placeholder="123456" inputmode="numeric"
+        maxlength="6" autocomplete="one-time-code" onkeydown="if(event.key==='Enter')fbVerifySms()" />
+      <div id="authError" class="login-error hidden"></div>
+      <button class="btn btn-primary" onclick="fbVerifySms()">Valider</button>
+      <button class="btn btn-secondary" style="margin-top:8px;" onclick="fbSendSms()">Renvoyer le code</button>
+    </div>
+
+    <div class="login-links" style="margin-top:12px;">
+      <span class="login-link" onclick="showLoginForm()">← Retour</span>
+    </div>
   </div>
 
   <!-- Formulaire inscription -->
