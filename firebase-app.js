@@ -196,7 +196,7 @@ async function migrateFromTurso() {
   const email = fbAuth.currentUser?.email;
   if (!email) return false;
   try {
-    const res = await fetch('/api/migrate', {
+    const res = await fetch('/api/sync?action=migrate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email }),

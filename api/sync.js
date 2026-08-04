@@ -67,6 +67,32 @@ module.exports = async function handler(req, res) {
     return res.status(500).json({ ok: false, error: 'DB unavailable: ' + (err.message || String(err)) });
   }
 
+  // ── POST /api/sync?action=migrate — migration Turso → Firebase (auth par email connu) ─
+  if (req.method === 'POST' && req.query.action === 'migrate') {
+    let body = req.body || {};
+    if (typeof body === 'string') { try { body = JSON.parse(body); } catch { body = {}; } }
+    const EMAIL_MAP = {
+      'leyrat.quentin@gmail.com': 'quentin',
+      'so.leyrat@gmail.com':      'sophie',
+    };
+    const username = EMAIL_MAP[body.email];
+    if (!username) return res.status(404).json({ ok: false, error: 'Email non reconnu' });
+    const pin = process.env['PIN_' + username.toUpperCase()];
+    if (!pin) return res.status(500).json({ ok: false, error: 'PIN non configuré' });
+    try {
+      const result = await getDb().execute({
+        sql: 'SELECT data FROM profiles WHERE user = ? AND pin = ?',
+        args: [username, pin],
+      });
+      if (!result.rows.length) return res.status(404).json({ ok: false, error: 'Données introuvables' });
+      const raw = result.rows[0].data;
+      const data = typeof raw === 'string' ? JSON.parse(raw) : (raw || {});
+      return res.status(200).json({ ok: true, data });
+    } catch (err) {
+      return res.status(500).json({ ok: false, error: err.message });
+    }
+  }
+
   // ── GET /api/sync?action=list — liste profils custom (sans PIN) ─
   if (req.method === 'GET' && req.query.action === 'list') {
     try {
