@@ -15,11 +15,20 @@ firebase.initializeApp(firebaseConfig);
 const fbAuth = firebase.auth();
 const fbDb   = firebase.firestore();
 
+// Récupère le résultat après un signInWithRedirect (mobile)
+fbAuth.getRedirectResult().catch(() => {});
+
 const ADMIN_EMAIL = 'leyrat.quentin@gmail.com';
 
 // ─── Derive localStorage prefix from Firebase user ────────────
-// Uses display name so existing data (quentin_*, sophie_*) is preserved
+// Known accounts are mapped by email to preserve existing localStorage data
+const EMAIL_PREFIX_MAP = {
+  'leyrat.quentin@gmail.com': 'quentin',
+  'so.leyrat@gmail.com':      'sophie',
+};
+
 function userPrefix(firebaseUser) {
+  if (EMAIL_PREFIX_MAP[firebaseUser.email]) return EMAIL_PREFIX_MAP[firebaseUser.email];
   const name = (firebaseUser.displayName || firebaseUser.email.split('@')[0] || 'user')
     .toLowerCase()
     .normalize('NFD').replace(/[̀-ͯ]/g, '') // remove accents
@@ -42,7 +51,13 @@ async function fbLoginGoogle() {
   clearAuthError();
   const provider = new firebase.auth.GoogleAuthProvider();
   try {
-    await fbAuth.signInWithPopup(provider);
+    // Popup sur desktop, redirect sur mobile (les popups sont souvent bloqués)
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    if (isMobile) {
+      await fbAuth.signInWithRedirect(provider);
+    } else {
+      await fbAuth.signInWithPopup(provider);
+    }
   } catch (err) {
     showAuthError(friendlyAuthError(err));
   }
