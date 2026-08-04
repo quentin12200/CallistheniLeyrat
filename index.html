@@ -432,6 +432,18 @@
       <div class="settings-rpg-info" id="rpgResetInfo"></div>
     </div>
 
+    <!-- Migration données depuis ancienne base -->
+    <div class="settings-section-header">☁️ Données</div>
+    <div class="card">
+      <div style="font-size:.88rem;color:var(--txt2);margin-bottom:12px;">
+        Si tes données précédentes n'apparaissent pas, clique ici pour les récupérer depuis l'ancienne base.
+      </div>
+      <button class="btn btn-secondary" style="width:100%;" onclick="manualMigrate()" id="migratBtn">
+        ↩ Récupérer mes anciennes données
+      </button>
+      <div id="migrateStatus" style="margin-top:10px;font-size:.85rem;text-align:center;display:none;"></div>
+    </div>
+
     <button class="btn btn-primary mt-16" style="width:100%;" onclick="saveSettings()">Enregistrer les réglages</button>
     <div style="height:24px;"></div>
   </div><!-- /page-settings -->
