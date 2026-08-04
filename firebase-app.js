@@ -55,15 +55,18 @@ async function fbLoginGoogle() {
   clearAuthError();
   const provider = new firebase.auth.GoogleAuthProvider();
   try {
-    // Popup sur desktop, redirect sur mobile (les popups sont souvent bloqués)
-    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-    if (isMobile) {
-      await fbAuth.signInWithRedirect(provider);
-    } else {
-      await fbAuth.signInWithPopup(provider);
-    }
+    await fbAuth.signInWithPopup(provider);
   } catch (err) {
-    showAuthError(friendlyAuthError(err));
+    // Si popup bloquée, basculer sur redirect
+    if (err.code === 'auth/popup-blocked' || err.code === 'auth/popup-closed-by-user') {
+      try {
+        await fbAuth.signInWithRedirect(provider);
+      } catch (err2) {
+        showAuthError(friendlyAuthError(err2));
+      }
+    } else {
+      showAuthError(friendlyAuthError(err));
+    }
   }
 }
 
