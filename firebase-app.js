@@ -15,6 +15,9 @@ firebase.initializeApp(firebaseConfig);
 const fbAuth = firebase.auth();
 const fbDb   = firebase.firestore();
 
+// Récupère le résultat après un signInWithRedirect (mobile)
+fbAuth.getRedirectResult().catch(() => {});
+
 const ADMIN_EMAIL = 'leyrat.quentin@gmail.com';
 
 // ─── Derive localStorage prefix from Firebase user ────────────
@@ -42,7 +45,13 @@ async function fbLoginGoogle() {
   clearAuthError();
   const provider = new firebase.auth.GoogleAuthProvider();
   try {
-    await fbAuth.signInWithPopup(provider);
+    // Popup sur desktop, redirect sur mobile (les popups sont souvent bloqués)
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    if (isMobile) {
+      await fbAuth.signInWithRedirect(provider);
+    } else {
+      await fbAuth.signInWithPopup(provider);
+    }
   } catch (err) {
     showAuthError(friendlyAuthError(err));
   }
