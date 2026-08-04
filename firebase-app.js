@@ -70,6 +70,67 @@ async function fbLoginGoogle() {
   }
 }
 
+async function fbLoginMicrosoft() {
+  clearAuthError();
+  const provider = new firebase.auth.OAuthProvider('microsoft.com');
+  try {
+    await fbAuth.signInWithPopup(provider);
+  } catch (err) {
+    if (err.code === 'auth/popup-blocked' || err.code === 'auth/popup-closed-by-user') {
+      try { await fbAuth.signInWithRedirect(provider); } catch (e2) { showAuthError(friendlyAuthError(e2)); }
+    } else {
+      showAuthError(friendlyAuthError(err));
+    }
+  }
+}
+
+// ─── Connexion par SMS ────────────────────────────────────────
+let _phoneConfirmation = null;
+
+async function fbSendSms() {
+  clearAuthError();
+  const phone = document.getElementById('phoneNumber')?.value.trim();
+  if (!phone) { showAuthError('Entre ton numéro de téléphone.'); return; }
+
+  const btn = document.getElementById('phoneSendBtn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Envoi…'; }
+
+  try {
+    if (!window._recaptchaVerifier) {
+      window._recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
+        size: 'invisible',
+        callback: () => {},
+      });
+    }
+    _phoneConfirmation = await fbAuth.signInWithPhoneNumber(phone, window._recaptchaVerifier);
+    document.getElementById('phoneStep1').classList.add('hidden');
+    document.getElementById('phoneStep2').classList.remove('hidden');
+  } catch (err) {
+    showAuthError(friendlyAuthError(err));
+    if (btn) { btn.disabled = false; btn.textContent = 'Envoyer le code SMS'; }
+    if (window._recaptchaVerifier) { window._recaptchaVerifier.clear(); window._recaptchaVerifier = null; }
+  }
+}
+
+async function fbVerifySms() {
+  clearAuthError();
+  const code = document.getElementById('smsCode')?.value.trim();
+  if (!code || !_phoneConfirmation) return;
+  try {
+    await _phoneConfirmation.confirm(code);
+  } catch (err) {
+    showAuthError(friendlyAuthError(err));
+  }
+}
+
+function showPhoneForm() {
+  document.getElementById('loginForm').classList.add('hidden');
+  document.getElementById('phoneForm').classList.remove('hidden');
+  document.getElementById('phoneStep1').classList.remove('hidden');
+  document.getElementById('phoneStep2').classList.add('hidden');
+  clearAuthError();
+}
+
 async function fbLoginEmail() {
   clearAuthError();
   const email    = document.getElementById('authEmail')?.value.trim();
@@ -410,12 +471,14 @@ function setAuthLoading(on) {
 function showLoginForm() {
   document.getElementById('loginForm')?.classList.remove('hidden');
   document.getElementById('registerForm')?.classList.add('hidden');
+  document.getElementById('phoneForm')?.classList.add('hidden');
   clearAuthError();
 }
 
 function showRegisterForm() {
   document.getElementById('loginForm')?.classList.add('hidden');
   document.getElementById('registerForm')?.classList.remove('hidden');
+  document.getElementById('phoneForm')?.classList.add('hidden');
   clearAuthError();
 }
 
