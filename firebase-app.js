@@ -174,7 +174,12 @@ async function syncFromFirestore() {
   setSyncIndicator && setSyncIndicator('syncing');
   try {
     const doc = await ref.get();
-    if (!doc.exists || !doc.data()?.data) { setSyncIndicator && setSyncIndicator(''); return; }
+    if (!doc.exists || !doc.data()?.data) {
+      // Firestore vide — tenter une migration depuis l'ancienne base Turso
+      await migrateFromTurso();
+      setSyncIndicator && setSyncIndicator('');
+      return;
+    }
 
     const data = doc.data().data;
     Object.entries(data).forEach(([k, v]) => {
@@ -184,6 +189,32 @@ async function syncFromFirestore() {
   } catch (err) {
     console.error('Firestore read error:', err);
     setSyncIndicator && setSyncIndicator('sync-error');
+  }
+}
+
+async function migrateFromTurso() {
+  const email = fbAuth.currentUser?.email;
+  if (!email) return;
+  try {
+    const res = await fetch('/api/migrate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+    const json = await res.json();
+    if (!json.ok || !json.data) return;
+
+    // Écrire les données dans localStorage
+    Object.entries(json.data).forEach(([k, v]) => {
+      if (v !== null && v !== undefined) {
+        localStorage.setItem(currentUser + '_' + k, v);
+      }
+    });
+    console.log('Migration Turso → Firebase OK');
+    // Puis sauvegarder dans Firestore pour les prochaines fois
+    await syncToFirestore();
+  } catch (e) {
+    console.log('Migration Turso non disponible:', e.message);
   }
 }
 
