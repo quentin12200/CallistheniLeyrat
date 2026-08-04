@@ -272,11 +272,44 @@ async function fbAdminGetUsers() {
   return snapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() }));
 }
 
+// ─── Enregistrement immédiat du profil dans Firestore ─────────
+async function ensureFirestoreProfile(user) {
+  const ref = fbDb.collection('users').doc(user.uid);
+  try {
+    const doc = await ref.get();
+    if (!doc.exists) {
+      await ref.set({
+        profile: {
+          displayName: user.displayName || '',
+          email: user.email || '',
+          photoURL: user.photoURL || '',
+        },
+        prefix: userPrefix(user),
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      });
+    } else {
+      // Mettre à jour le profil si le nom a changé
+      await ref.set({
+        profile: {
+          displayName: user.displayName || '',
+          email: user.email || '',
+          photoURL: user.photoURL || '',
+        },
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      }, { merge: true });
+    }
+  } catch (e) { /* offline */ }
+}
+
 // ─── Callbacks vers app.js ────────────────────────────────────
 function onFirebaseLogin(user) {
   const prefix = userPrefix(user);
   // currentUser est défini dans app.js — on le met à jour globalement
   window.currentUser = prefix;
+
+  // Enregistrer immédiatement dans Firestore (visible dans le panneau admin)
+  ensureFirestoreProfile(user);
 
   // Masquer login, afficher app
   document.getElementById('loginScreen')?.classList.add('hidden');
