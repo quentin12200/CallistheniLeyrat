@@ -3073,7 +3073,7 @@ async function renderAdmin() {
           </div>
 
           <div class="admin-reset-row">
-            <input type="password" inputmode="numeric" maxlength="6" placeholder="Nouveau PIN (4-6 chiffres)"
+            <input type="password" inputmode="numeric" minlength="6" maxlength="6" placeholder="Nouveau PIN (6 chiffres)"
               class="admin-pin-input" id="newpin-${u.user}" />
             <button class="btn btn-secondary" style="font-size:.8rem;padding:8px 14px;"
               onclick="adminResetPin('${u.user}')">🔑 Réinitialiser</button>
@@ -3090,7 +3090,7 @@ async function adminResetPin(targetUser) {
   const input = document.getElementById('newpin-' + targetUser);
   if (!input) return;
   const newPin = input.value.trim();
-  if (newPin.length < 4) { showToast('PIN trop court — 4 chiffres minimum.'); return; }
+  if (newPin.length < 6) { showToast('PIN trop court — 6 chiffres minimum.'); return; }
 
   const pin = localStorage.getItem('quentin_pin');
   if (!pin) { showToast('Reconnecte-toi d\'abord.'); return; }
