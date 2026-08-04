@@ -999,7 +999,9 @@ function renderHome() {
       heroBtn.classList.add('done');
       heroBtn.onclick = null;
     } else {
-      heroBtn.innerHTML = '▶ Lancer la séance';
+      const savedP = loadSeriesProgress();
+      const hasProgress = Object.values(savedP).some(v => v > 0);
+      heroBtn.innerHTML = hasProgress ? '↩ Reprendre la séance' : '▶ Lancer la séance';
       heroBtn.classList.remove('done');
       heroBtn.onclick = () => openWorkoutOverlay();
     }
@@ -2161,7 +2163,13 @@ function openWorkoutOverlay(startIdx = 0, forDay = null) {
   // Show overlay
   document.getElementById('workoutOverlay').classList.remove('hidden');
 
-  // Navigate directly to requested exercise
+  // Si startIdx non forcé, reprendre au premier exercice non terminé
+  if (startIdx === 0) {
+    const firstIncomplete = woState.exercises.findIndex((ex, i) =>
+      (woState.timers[i]?.doneSets || 0) < ex.targetSets
+    );
+    if (firstIncomplete > 0) startIdx = firstIncomplete;
+  }
   if (startIdx > 0) woGoTo(startIdx);
   requestWakeLock();
 
