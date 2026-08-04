@@ -270,27 +270,6 @@ function workout(day, diffOffset = 0) {
   };
 }
 
-// ─── Sync cloud ───────────────────────────────────────────────
-const SYNC_API = '/api/sync';
-
-// Clés localStorage à synchroniser (préfixées par l'utilisateur)
-const SYNC_KEYS = [
-  'startDate', 'level', 'diffOffset', 'feedbackHistory',
-  'xp', 'badges', 'bestStreak', 'weightHistory',
-  'notifEnabled', 'notifTime', 'objective', 'rythm',
-];
-
-// Génère dynamiquement les clés done_N et feedback_N jusqu'au jour actuel + 5
-function getSyncDoneKeys() {
-  const keys = [];
-  const maxDay = dayNumber ? Math.min(dayNumber() + 5, 500) : 365;
-  for (let i = 1; i <= maxDay; i++) {
-    keys.push('done_' + i);
-    keys.push('feedback_' + i);
-    keys.push('series_progress_' + i);
-  }
-  return keys;
-}
 
 function setSyncIndicator(state) {
   // state: '' | 'syncing' | 'synced' | 'sync-error'
@@ -310,364 +289,6 @@ function setSyncIndicator(state) {
   }
 }
 
-async function syncToCloud() {
-  if (!currentUser || currentUser === 'invite') return;
-  const pin = localStorage.getItem(currentUser + '_pin');
-  if (!pin) return;
-
-  setSyncIndicator('syncing');
-
-  // Collecter toutes les clés pertinentes
-  const data = {};
-  const allKeys = [...SYNC_KEYS, ...getSyncDoneKeys()];
-  allKeys.forEach(k => {
-    const val = localStorage.getItem(currentUser + '_' + k);
-    if (val !== null) data[k] = val;
-  });
-
-  try {
-    const res = await fetch(SYNC_API, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user: currentUser, pin, data }),
-    });
-    const json = await res.json();
-    if (json.ok) {
-      setSyncIndicator('synced');
-    } else {
-      setSyncIndicator('sync-error');
-    }
-  } catch (e) {
-    // Offline — silent fail
-    setSyncIndicator('sync-error');
-  }
-}
-
-async function syncFromCloud() {
-  if (!currentUser || currentUser === 'invite') return;
-  const pin = localStorage.getItem(currentUser + '_pin');
-  if (!pin) return;
-
-  setSyncIndicator('syncing');
-
-  try {
-    const res = await fetch(`${SYNC_API}?user=${encodeURIComponent(currentUser)}&pin=${encodeURIComponent(pin)}`);
-    const json = await res.json();
-    if (!json.ok || !json.data) {
-      setSyncIndicator('');
-      return;
-    }
-
-    // Merge strategy:
-    // - done_N (workout completions): cloud wins (most permissive — if done anywhere, it's done)
-    // - Settings: cloud wins if cloud updated_at > local (we use updated_at stored in local)
-    // - weightHistory: merge by date (union)
-    const cloudData = json.data; // { key: rawStringValue, ... }
-
-    Object.entries(cloudData).forEach(([k, cloudRaw]) => {
-      if (cloudRaw === null || cloudRaw === undefined) return;
-      const localKey = currentUser + '_' + k;
-      const localRaw = localStorage.getItem(localKey);
-
-      if (k.startsWith('done_')) {
-        // Cloud wins: if cloud says done, it's done
-        if (cloudRaw === '1') localStorage.setItem(localKey, '1');
-      } else if (k === 'weightHistory') {
-        // Merge arrays by date
-        let cloud = [];
-        let local = [];
-        try { cloud = JSON.parse(cloudRaw); } catch {}
-        try { local = localRaw ? JSON.parse(localRaw) : []; } catch {}
-        const merged = [...local];
-        cloud.forEach(ce => {
-          if (!merged.find(le => le.date === ce.date && le.poids === ce.poids)) {
-            merged.push(ce);
-          }
-        });
-        merged.sort((a, b) => a.date.localeCompare(b.date));
-        localStorage.setItem(localKey, JSON.stringify(merged));
-      } else if (k === 'xp') {
-        // Take max XP
-        const cloudXP = parseInt(cloudRaw) || 0;
-        const localXP = parseInt(localRaw) || 0;
-        localStorage.setItem(localKey, String(Math.max(cloudXP, localXP)));
-      } else if (k === 'badges') {
-        // Union of badges
-        let cloud = [];
-        let local = [];
-        try { cloud = JSON.parse(cloudRaw); } catch {}
-        try { local = localRaw ? JSON.parse(localRaw) : []; } catch {}
-        const merged = Array.from(new Set([...local, ...cloud]));
-        localStorage.setItem(localKey, JSON.stringify(merged));
-      } else if (k === 'bestStreak') {
-        const cloudVal = parseInt(cloudRaw) || 0;
-        const localVal = parseInt(localRaw) || 0;
-        localStorage.setItem(localKey, String(Math.max(cloudVal, localVal)));
-      } else {
-        // For settings: cloud wins if local is empty, otherwise keep local
-        if (localRaw === null) {
-          localStorage.setItem(localKey, cloudRaw);
-        }
-        // If local exists, keep local (user may have set it on this device)
-      }
-    });
-
-    setSyncIndicator('synced');
-  } catch (e) {
-    // Offline — silent fail
-    setSyncIndicator('sync-error');
-  }
-}
-
-// ─── PIN / Authentification ───────────────────────────────────
-let _pendingUser = null;
-
-function startProfileLogin(user) {
-  // Check if PIN already stored for this device
-  const savedPin = localStorage.getItem(user + '_pin');
-  if (savedPin) {
-    // Already authenticated on this device — enter directly
-    selectProfile(user);
-    return;
-  }
-  // Show PIN screen
-  _pendingUser = user;
-  document.getElementById('profileScreen').classList.add('hidden');
-  const pinScreen = document.getElementById('pinScreen');
-  pinScreen.classList.remove('hidden');
-
-  const avatar = document.getElementById('pinAvatar');
-  avatar.textContent = user === 'quentin' ? 'Q' : 'S';
-  avatar.className = 'pin-avatar ' + user;
-  document.getElementById('pinTitle').textContent =
-    'Bonjour ' + user.charAt(0).toUpperCase() + user.slice(1) + ' !';
-  document.getElementById('pinInput').value = '';
-  document.getElementById('pinError').classList.add('hidden');
-  document.getElementById('pinLoading').classList.add('hidden');
-  document.getElementById('pinOfflineNote').style.display = 'none';
-  document.getElementById('pinSubmitBtn').disabled = true;
-  document.getElementById('pinInput').focus();
-}
-
-function onPinInput() {
-  const val = document.getElementById('pinInput').value;
-  document.getElementById('pinSubmitBtn').disabled = val.length < 6;
-  document.getElementById('pinError').classList.add('hidden');
-}
-
-function cancelPin() {
-  _pendingUser = null;
-  document.getElementById('pinScreen').classList.add('hidden');
-  document.getElementById('profileScreen').classList.remove('hidden');
-}
-
-// ─── Création de profil personnalisé ─────────────────────────
-function loadCustomProfiles() {
-  return JSON.parse(localStorage.getItem('customProfiles') || '[]');
-}
-
-function saveCustomProfiles(list) {
-  localStorage.setItem('customProfiles', JSON.stringify(list));
-}
-
-async function fetchAndMergeCustomProfiles() {
-  try {
-    const res = await fetch(SYNC_API + '?action=list');
-    if (!res.ok) return;
-    const json = await res.json();
-    if (!json.ok || !Array.isArray(json.users)) return;
-    const local = loadCustomProfiles();
-    const localIds = new Set(local.map(p => p.id));
-    let changed = false;
-    json.users.forEach((userId, i) => {
-      if (!localIds.has(userId)) {
-        const name = userId.charAt(0).toUpperCase() + userId.slice(1);
-        local.push({ id: userId, name, color: AVATAR_COLORS[i % AVATAR_COLORS.length] });
-        changed = true;
-      }
-    });
-    if (changed) {
-      saveCustomProfiles(local);
-      renderCustomProfiles();
-    }
-  } catch (e) { /* offline */ }
-}
-
-function renderCustomProfiles() {
-  const list = loadCustomProfiles();
-  const container = document.getElementById('customProfileCards');
-  if (!container) return;
-  if (list.length === 0) { container.style.display = 'none'; return; }
-  container.style.display = 'flex';
-  container.innerHTML = list.map(p => {
-    const letter = p.name.charAt(0).toUpperCase();
-    const color = p.color || '#888';
-    return `
-      <button class="profile-btn" onclick="startProfileLogin('${p.id}')">
-        <div class="profile-avatar custom" style="background:${color}20;color:${color};">${letter}</div>
-        <div class="profile-name">${p.name}</div>
-      </button>`;
-  }).join('');
-}
-
-function showCreateProfile() {
-  document.getElementById('profileScreen').classList.add('hidden');
-  document.getElementById('createProfileScreen').classList.remove('hidden');
-  document.getElementById('createProfileName').value = '';
-  document.getElementById('createProfilePin').value = '';
-  document.getElementById('createProfileError').classList.add('hidden');
-  document.getElementById('createProfileLoading').classList.add('hidden');
-  document.getElementById('createProfileBtn').disabled = true;
-  document.getElementById('createProfileName').focus();
-}
-
-function cancelCreateProfile() {
-  document.getElementById('createProfileScreen').classList.add('hidden');
-  document.getElementById('profileScreen').classList.remove('hidden');
-}
-
-function onCreateProfileInput() {
-  const name = document.getElementById('createProfileName').value.trim();
-  const pin = document.getElementById('createProfilePin').value;
-  document.getElementById('createProfileBtn').disabled = !(name.length >= 2 && pin.length >= 4);
-  document.getElementById('createProfileError').classList.add('hidden');
-}
-
-const AVATAR_COLORS = ['#e53e3e','#dd6b20','#38a169','#3182ce','#805ad5','#d53f8c','#00b5d8'];
-
-async function submitCreateProfile() {
-  const name = document.getElementById('createProfileName').value.trim();
-  const pin = document.getElementById('createProfilePin').value;
-  if (!name || pin.length < 4) return;
-
-  const userId = name.toLowerCase().replace(/[^a-z0-9]/g, '');
-  if (!userId) {
-    document.getElementById('createProfileError').textContent = 'Prénom invalide (utilise des lettres)';
-    document.getElementById('createProfileError').classList.remove('hidden');
-    return;
-  }
-
-  document.getElementById('createProfileBtn').disabled = true;
-  document.getElementById('createProfileLoading').classList.remove('hidden');
-  document.getElementById('createProfileError').classList.add('hidden');
-
-  try {
-    const res = await fetch(SYNC_API, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'register', user: userId, pin }),
-    });
-    const json = await res.json();
-    document.getElementById('createProfileLoading').classList.add('hidden');
-
-    if (json.ok) {
-      // Sauvegarder le profil localement
-      const color = AVATAR_COLORS[loadCustomProfiles().length % AVATAR_COLORS.length];
-      const list = loadCustomProfiles();
-      list.push({ id: userId, name, color });
-      saveCustomProfiles(list);
-      // Mémoriser le PIN sur cet appareil
-      localStorage.setItem(userId + '_pin', pin);
-      // Retour à l'écran de profil
-      document.getElementById('createProfileScreen').classList.add('hidden');
-      document.getElementById('profileScreen').classList.remove('hidden');
-      renderCustomProfiles();
-    } else {
-      document.getElementById('createProfileError').textContent = json.error || 'Erreur — réessaie';
-      document.getElementById('createProfileError').classList.remove('hidden');
-      document.getElementById('createProfileBtn').disabled = false;
-    }
-  } catch (e) {
-    document.getElementById('createProfileLoading').classList.add('hidden');
-    document.getElementById('createProfileError').textContent = 'Hors-ligne — impossible de créer le profil';
-    document.getElementById('createProfileError').classList.remove('hidden');
-    document.getElementById('createProfileBtn').disabled = false;
-  }
-}
-
-async function submitPin() {
-  const user = _pendingUser;
-  const pin = document.getElementById('pinInput').value;
-  if (!user || pin.length < 6) return;
-
-  document.getElementById('pinSubmitBtn').disabled = true;
-  document.getElementById('pinLoading').classList.remove('hidden');
-  document.getElementById('pinError').classList.add('hidden');
-
-  try {
-    const res = await fetch(`${SYNC_API}?user=${encodeURIComponent(user)}&pin=${encodeURIComponent(pin)}`);
-    const json = await res.json();
-
-    document.getElementById('pinLoading').classList.add('hidden');
-
-    if (json.ok) {
-      // Save PIN for this device
-      localStorage.setItem(user + '_pin', pin);
-      // Merge cloud data into local
-      if (json.data) {
-        mergeCloudDataDirectly(user, json.data);
-      }
-      document.getElementById('pinScreen').classList.add('hidden');
-      selectProfile(user);
-    } else {
-      document.getElementById('pinError').classList.remove('hidden');
-      document.getElementById('pinSubmitBtn').disabled = false;
-    }
-  } catch (e) {
-    // Offline — allow entry with local data if any local data exists
-    document.getElementById('pinLoading').classList.add('hidden');
-    const hasLocalData = localStorage.getItem(user + '_startDate') !== null;
-    if (hasLocalData) {
-      document.getElementById('pinOfflineNote').style.display = 'block';
-      // Store PIN optimistically — it will be verified next time online
-      localStorage.setItem(user + '_pin', pin);
-      document.getElementById('pinScreen').classList.add('hidden');
-      selectProfile(user);
-    } else {
-      document.getElementById('pinError').textContent = 'Impossible de vérifier le PIN (hors-ligne)';
-      document.getElementById('pinError').classList.remove('hidden');
-      document.getElementById('pinSubmitBtn').disabled = false;
-    }
-  }
-}
-
-function mergeCloudDataDirectly(user, cloudData) {
-  // Same merge logic as syncFromCloud but synchronous, used during PIN verification
-  Object.entries(cloudData).forEach(([k, cloudRaw]) => {
-    if (cloudRaw === null || cloudRaw === undefined) return;
-    const localKey = user + '_' + k;
-    const localRaw = localStorage.getItem(localKey);
-
-    if (k.startsWith('done_')) {
-      if (cloudRaw === '1') localStorage.setItem(localKey, '1');
-    } else if (k === 'weightHistory') {
-      let cloud = [], local = [];
-      try { cloud = JSON.parse(cloudRaw); } catch {}
-      try { local = localRaw ? JSON.parse(localRaw) : []; } catch {}
-      const merged = [...local];
-      cloud.forEach(ce => {
-        if (!merged.find(le => le.date === ce.date && le.poids === ce.poids)) merged.push(ce);
-      });
-      merged.sort((a, b) => a.date.localeCompare(b.date));
-      localStorage.setItem(localKey, JSON.stringify(merged));
-    } else if (k === 'xp') {
-      const cloudXP = parseInt(cloudRaw) || 0;
-      const localXP = parseInt(localRaw) || 0;
-      localStorage.setItem(localKey, String(Math.max(cloudXP, localXP)));
-    } else if (k === 'badges') {
-      let cloud = [], local = [];
-      try { cloud = JSON.parse(cloudRaw); } catch {}
-      try { local = localRaw ? JSON.parse(localRaw) : []; } catch {}
-      localStorage.setItem(localKey, JSON.stringify(Array.from(new Set([...local, ...cloud]))));
-    } else if (k === 'bestStreak') {
-      const cloudVal = parseInt(cloudRaw) || 0;
-      const localVal = parseInt(localRaw) || 0;
-      localStorage.setItem(localKey, String(Math.max(cloudVal, localVal)));
-    } else {
-      if (localRaw === null) localStorage.setItem(localKey, cloudRaw);
-    }
-  });
-}
 
 // ─── Gestion des profils / localStorage ──────────────────────
 let currentUser = null; // 'quentin' | 'sophie'
@@ -735,7 +356,7 @@ function markDone(day, feedback = 'ok') {
   checkBadges();
   saveStreak();
   stopSessionTimer(); // Feature 4: arrêter le minuteur de séance
-  syncToCloud();
+  if (typeof syncToFirestore === 'function') syncToFirestore();
 }
 
 // ─── Système RPG ─────────────────────────────────────────────
@@ -1818,7 +1439,7 @@ function saveSettings() {
   // Seulement re-render home si la date a changé (évite les crashs)
   if (prevDate !== dateVal) renderHome();
   renderSettings();
-  syncToCloud();
+  if (typeof syncToFirestore === 'function') syncToFirestore();
 }
 
 // ─── Notifications ────────────────────────────────────────────
@@ -1931,62 +1552,6 @@ function showToast(msg) {
   t._timeout = setTimeout(() => { t.style.opacity = '0'; }, 2500);
 }
 
-// ─── Sélection de profil ─────────────────────────────────────
-function selectProfile(user) {
-  currentUser = user;
-  // Ne pas mémoriser le profil invité pour ne pas bloquer Quentin/Sophie au prochain lancement
-  if (user !== 'invite') localStorage.setItem('lastUser', user);
-  document.getElementById('profileScreen').classList.add('hidden');
-  document.getElementById('app').classList.remove('hidden');
-  const displayName = user === 'invite' ? 'Invité' : user.charAt(0).toUpperCase() + user.slice(1);
-  document.getElementById('topbarProfileName').textContent = displayName;
-
-  // Sauvegarder automatiquement la date de départ si c'est la première utilisation
-  if (!load('startDate')) {
-    store('startDate', new Date().toISOString().slice(0, 10));
-  }
-
-  // Demander permission notif après la première interaction
-  const sessions = countDoneSessions();
-  if (sessions >= 1) requestNotificationPermission();
-
-  // Vérifier si c'est un retour après absence
-  const daysSince = getDaysSinceLastSession();
-  if (daysSince >= 2) {
-    setTimeout(() => {
-      document.getElementById('comebackMsg').textContent = randomComeback();
-      document.getElementById('comebackBanner').classList.remove('hidden');
-    }, 500);
-  }
-
-  // Afficher l'onglet Admin uniquement pour Quentin
-  const adminBtn = document.getElementById('nav-admin');
-  if (adminBtn) {
-    if (user === 'quentin') adminBtn.classList.remove('hidden');
-    else adminBtn.classList.add('hidden');
-  }
-
-  showPage('home');
-  // Garder l'écran allumé si la séance du jour n'est pas encore faite
-  if (!isDone(dayNumber())) requestWakeLock();
-  // Sync depuis le cloud (background — ne bloque pas l'affichage)
-  syncFromCloud();
-  // Démarrer le watcher de notification et s'abonner au push si permission déjà accordée
-  setTimeout(() => {
-    checkAndFireNotificationIfDue();
-    startNotifWatcher();
-    if (Notification.permission === 'granted' && load('notifEnabled', false)) {
-      subscribeToPushIfNeeded();
-    }
-  }, 1000);
-}
-
-function switchProfile() {
-  currentUser = null;
-  document.getElementById('app').classList.add('hidden');
-  document.getElementById('profileScreen').classList.remove('hidden');
-  document.getElementById('comebackBanner').classList.add('hidden');
-}
 
 // ─── Feedback séance ─────────────────────────────────────────
 let selectedFeedback = 'ok';
@@ -2404,7 +1969,7 @@ function handleQuickMeasure() {
   document.getElementById('quickMeasureTaille').value = '';
   document.getElementById('quickMeasureNote').value = '';
   showToast('Mesure enregistrée ✓');
-  syncToCloud();
+  if (typeof syncToFirestore === 'function') syncToFirestore();
 }
 
 function handleSaveMeasure() {
@@ -3011,105 +2576,62 @@ function woToggleInfo(idx) {
   content.classList.toggle('hidden');
 }
 
-// ─── PIN oublié ───────────────────────────────────────────────
-function showPinForgotMsg() {
-  const el = document.getElementById('pinForgotMsg');
-  if (el) el.classList.toggle('hidden');
-}
 
 // ─── Admin (Quentin uniquement) ───────────────────────────────
 async function renderAdmin() {
   const el = document.getElementById('adminContent');
   if (!el) return;
-  if (currentUser !== 'quentin') {
+  if (typeof fbIsAdmin !== 'function' || !fbIsAdmin()) {
     el.innerHTML = '<div class="card" style="color:var(--txt2);text-align:center;">Accès réservé à l\'administrateur.</div>';
     return;
   }
 
   el.innerHTML = '<div class="card" style="text-align:center;color:var(--txt2);">Chargement des données…</div>';
 
-  const pin = localStorage.getItem('quentin_pin');
-  if (!pin) { el.innerHTML = '<div class="card">PIN non trouvé — reconnecte-toi.</div>'; return; }
-
   try {
-    const res = await fetch(`/api/admin?action=users&pin=${encodeURIComponent(pin)}`);
-    const json = await res.json();
-    if (!json.ok) { el.innerHTML = `<div class="card" style="color:red;">${json.error}</div>`; return; }
+    const users = await fbAdminGetUsers();
 
-    const users = json.users;
+    function parseStats(data) {
+      if (!data) return { sessions: 0, streak: 0, xp: 0, startDate: null };
+      const d = data;
+      const startDate = d.startDate || null;
+      let sessions = 0, streak = 0;
+      if (startDate) {
+        const dayNum = Math.floor((Date.now() - new Date(startDate + 'T00:00:00Z').getTime()) / 86400000) + 1;
+        for (let i = 1; i <= dayNum; i++) { if (d['done_' + i]) sessions++; }
+        for (let i = dayNum; i >= 1; i--) { if (d['done_' + i]) streak++; else break; }
+      }
+      return { sessions, streak, xp: parseInt(d.xp) || 0, startDate };
+    }
 
     el.innerHTML = `
       <div class="admin-summary card">
-        <div class="admin-summary-title">👥 ${users.length} utilisateur${users.length > 1 ? 's' : ''} enregistré${users.length > 1 ? 's' : ''}</div>
+        <div class="admin-summary-title">👥 ${users.length} utilisateur${users.length > 1 ? 's' : ''} Firebase</div>
       </div>
 
-      ${users.map(u => `
+      ${users.map(u => {
+        const stats = parseStats(u.data?.data);
+        const name = u.profile?.displayName || u.uid.slice(0, 8);
+        const email = u.profile?.email || '';
+        return `
         <div class="card admin-user-card">
           <div class="admin-user-header">
-            <div class="admin-user-avatar">${u.user.charAt(0).toUpperCase()}</div>
+            <div class="admin-user-avatar">${name.charAt(0).toUpperCase()}</div>
             <div class="admin-user-info">
-              <div class="admin-user-name">${u.user.charAt(0).toUpperCase() + u.user.slice(1)}</div>
-              <div class="admin-user-meta">${u.startDate ? `Depuis le ${u.startDate}` : 'Pas encore démarré'}</div>
+              <div class="admin-user-name">${name}</div>
+              <div class="admin-user-meta">${email}${stats.startDate ? ` · depuis le ${stats.startDate}` : ''}</div>
             </div>
           </div>
-
           <div class="admin-stats-row">
-            <div class="admin-stat">
-              <div class="admin-stat-val">${u.sessions}</div>
-              <div class="admin-stat-lbl">Séances</div>
-            </div>
-            <div class="admin-stat">
-              <div class="admin-stat-val">${u.streak}</div>
-              <div class="admin-stat-lbl">Série actuelle</div>
-            </div>
-            <div class="admin-stat">
-              <div class="admin-stat-val">${u.xp}</div>
-              <div class="admin-stat-lbl">XP total</div>
-            </div>
-            <div class="admin-stat">
-              <div class="admin-stat-val">${u.notifEnabled ? '🔔' : '🔕'}</div>
-              <div class="admin-stat-lbl">Notifs ${u.notifTime || ''}</div>
-            </div>
+            <div class="admin-stat"><div class="admin-stat-val">${stats.sessions}</div><div class="admin-stat-lbl">Séances</div></div>
+            <div class="admin-stat"><div class="admin-stat-val">${stats.streak}</div><div class="admin-stat-lbl">Série</div></div>
+            <div class="admin-stat"><div class="admin-stat-val">${stats.xp}</div><div class="admin-stat-lbl">XP</div></div>
           </div>
-
-          <div class="admin-reset-row">
-            <input type="password" inputmode="numeric" minlength="6" maxlength="6" placeholder="Nouveau PIN (6 chiffres)"
-              class="admin-pin-input" id="newpin-${u.user}" />
-            <button class="btn btn-secondary" style="font-size:.8rem;padding:8px 14px;"
-              onclick="adminResetPin('${u.user}')">🔑 Réinitialiser</button>
-          </div>
-        </div>
-      `).join('')}
+        </div>`;
+      }).join('')}
     `;
   } catch (err) {
-    el.innerHTML = `<div class="card" style="color:red;">Erreur réseau — réessaie.</div>`;
-  }
-}
-
-async function adminResetPin(targetUser) {
-  const input = document.getElementById('newpin-' + targetUser);
-  if (!input) return;
-  const newPin = input.value.trim();
-  if (newPin.length < 6) { showToast('PIN trop court — 6 chiffres minimum.'); return; }
-
-  const pin = localStorage.getItem('quentin_pin');
-  if (!pin) { showToast('Reconnecte-toi d\'abord.'); return; }
-
-  try {
-    const res = await fetch('/api/admin', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pin, action: 'reset-pin', targetUser, newPin }),
-    });
-    const json = await res.json();
-    if (json.ok) {
-      showToast(`✅ PIN de ${targetUser} réinitialisé à : ${newPin}`);
-      input.value = '';
-    } else {
-      showToast('❌ ' + json.error);
-    }
-  } catch (err) {
-    showToast('Erreur réseau.');
+    el.innerHTML = `<div class="card" style="color:red;">${err.message || 'Erreur'}</div>`;
   }
 }
 
@@ -3121,19 +2643,6 @@ function init() {
   }
 
   migrateOldData();
-  renderCustomProfiles();
-  fetchAndMergeCustomProfiles(); // charge les profils distants en arrière-plan
-
-  // Reprendre le dernier profil si disponible
-  const last = localStorage.getItem('lastUser');
-  const customIds = loadCustomProfiles().map(p => p.id);
-  if (last && (last === 'quentin' || last === 'sophie' || customIds.includes(last))) {
-    startProfileLogin(last);
-  }
 }
 
 document.addEventListener('DOMContentLoaded', init);
-
-// Exposer pour debug console
-window.syncToCloud = syncToCloud;
-window.syncFromCloud = syncFromCloud;

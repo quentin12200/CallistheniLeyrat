@@ -27,19 +27,33 @@ html, body {
   -webkit-tap-highlight-color: transparent;
 }
 
-/* ===== Écran de sélection de profil ===== */
-#profileScreen {
+/* ===== Écran de connexion Firebase ===== */
+#loginScreen {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
   min-height: 100dvh;
-  padding: 32px 24px;
-  gap: 32px;
-  background: linear-gradient(160deg, #fff5f5, #ffffff);
+  padding: 40px 20px 32px;
+  gap: 24px;
+  background: linear-gradient(160deg, #fff0f0 0%, #ffffff 60%);
+  overflow-y: auto;
 }
 
-#profileScreen h1 {
+.login-logo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.login-logo-img {
+  width: 80px;
+  height: 80px;
+  border-radius: 20px;
+  box-shadow: 0 4px 20px rgba(215,25,32,0.2);
+}
+
+.login-title {
   font-size: 1.8rem;
   font-weight: 900;
   color: var(--red);
@@ -47,58 +61,131 @@ html, body {
   line-height: 1.2;
 }
 
-#profileScreen p {
+.login-subtitle {
+  font-size: 0.95rem;
   color: var(--txt2);
   text-align: center;
-  font-size: 1rem;
+  max-width: 280px;
 }
 
-.profile-cards {
-  display: flex;
-  gap: 20px;
-  flex-wrap: wrap;
-  justify-content: center;
+.login-card {
   width: 100%;
-  max-width: 400px;
-}
-
-.profile-btn {
-  flex: 1;
-  min-width: 130px;
+  max-width: 380px;
   background: var(--card);
-  border: 2px solid var(--border);
   border-radius: var(--radius);
-  padding: 28px 16px;
+  padding: 24px 20px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.08);
   display: flex;
   flex-direction: column;
-  align-items: center;
   gap: 12px;
-  cursor: pointer;
-  transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
-  color: var(--txt);
-  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
 }
 
-.profile-btn:active { transform: scale(0.97); }
-.profile-btn:hover { border-color: var(--red); box-shadow: 0 4px 20px rgba(215,25,32,0.15); }
+.login-form-title {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--txt);
+  text-align: center;
+  margin-bottom: 4px;
+}
 
-.profile-avatar {
-  width: 72px;
-  height: 72px;
-  border-radius: 50%;
+.login-google-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 2.2rem;
-  font-weight: 900;
+  background: #fff;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  padding: 13px 16px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--txt);
+  cursor: pointer;
+  transition: box-shadow 0.2s, border-color 0.2s;
+  width: 100%;
+}
+.login-google-btn:hover { border-color: #aaa; box-shadow: 0 2px 12px rgba(0,0,0,0.1); }
+.login-google-btn:active { transform: scale(0.98); }
+
+.login-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--txt2);
+  font-size: 0.85rem;
+}
+.login-divider::before, .login-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
 }
 
-.profile-avatar.quentin { background: #ffe5e5; color: var(--red); }
-.profile-avatar.sophie  { background: #e5eeff; color: var(--blue); }
+.login-input {
+  width: 100%;
+  padding: 13px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  font-size: 1rem;
+  color: var(--txt);
+  background: var(--bg);
+  outline: none;
+  transition: border-color 0.2s;
+}
+.login-input:focus { border-color: var(--red); }
 
-.profile-name {
-  font-size: 1.2rem;
-  font-weight: 800;
+.login-error {
+  background: #fee2e2;
+  color: #991b1b;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 0.88rem;
+  font-weight: 500;
+  text-align: center;
+}
+
+.login-links {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.login-link {
+  font-size: 0.85rem;
+  color: var(--red);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.login-guest-sep {
+  text-align: center;
+  color: var(--txt2);
+  font-size: 0.85rem;
+  margin: 4px 0;
+}
+
+.login-guest-btn {
+  width: 100%;
+  background: none;
+  border: 1.5px dashed var(--border);
+  border-radius: 10px;
+  padding: 11px;
+  font-size: 0.9rem;
+  color: var(--txt2);
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+.login-guest-btn:hover { border-color: var(--txt2); }
+
+/* Photo de profil dans la topbar */
+.topbar-photo {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background-size: cover;
+  background-position: center;
+  background-color: var(--border);
+  flex-shrink: 0;
 }
 
 /* ===== App principale ===== */
@@ -1299,39 +1386,6 @@ html, body {
   margin-bottom: 2px;
 }
 
-/* ===== Profil invité ===== */
-.guest-separator {
-  color: var(--txt2);
-  font-size: 0.85rem;
-  letter-spacing: 0.1em;
-}
-
-.profile-btn-guest {
-  width: 100%;
-  max-width: 300px;
-  flex-direction: row;
-  padding: 16px 20px;
-  gap: 14px;
-  border-style: dashed;
-  justify-content: flex-start;
-}
-
-.profile-avatar.guest {
-  width: 48px;
-  height: 48px;
-  font-size: 1.4rem;
-  background: #f0f0f0;
-  color: var(--txt2);
-  flex-shrink: 0;
-}
-
-.guest-note {
-  font-size: 0.78rem;
-  color: var(--txt2);
-  font-weight: 400;
-  text-align: left;
-  line-height: 1.4;
-}
 
 /* ===== Exercice fait (séance validée) ===== */
 .exercise-item-done {
@@ -1347,122 +1401,10 @@ html, body {
   flex-shrink: 0;
 }
 
-/* ===== PIN Screen ===== */
-#pinScreen {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 100dvh;
-  padding: 32px 24px;
-  background: linear-gradient(160deg, #fff5f5, #ffffff);
-}
-
-.pin-card {
-  background: var(--card);
-  border-radius: var(--radius);
-  padding: 36px 28px;
-  max-width: 360px;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16px;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.10);
-}
-
-.pin-avatar {
-  width: 72px;
-  height: 72px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 2.2rem;
-  font-weight: 900;
-}
-
-.pin-avatar.quentin { background: #ffe5e5; color: var(--red); }
-.pin-avatar.sophie  { background: #e5eeff; color: var(--blue); }
-
-.pin-title {
-  font-size: 1.3rem;
-  font-weight: 800;
-  color: var(--txt);
-}
-
-.pin-subtitle {
-  font-size: 0.88rem;
-  color: var(--txt2);
-  text-align: center;
-}
-
-.pin-input {
-  width: 100%;
-  padding: 14px 16px;
-  font-size: 1.6rem;
-  letter-spacing: 0.4em;
-  text-align: center;
-  border: 2px solid var(--border);
-  border-radius: 12px;
-  outline: none;
-  background: var(--bg);
-  color: var(--txt);
-  transition: border-color 0.2s;
-}
-
-.pin-input:focus { border-color: var(--red); }
-
-.pin-error {
-  color: var(--red);
-  font-weight: 700;
-  font-size: 0.9rem;
-  text-align: center;
-}
-
-.pin-loading {
-  color: var(--txt2);
-  font-size: 0.88rem;
-  text-align: center;
-  font-style: italic;
-}
-
-.pin-buttons {
-  display: flex;
-  gap: 12px;
-  width: 100%;
-}
-
-.pin-buttons .btn { flex: 1; }
-
 .btn-secondary {
   background: var(--bg);
   color: var(--txt);
   border: 2px solid var(--border);
-}
-
-.pin-offline-note {
-  font-size: 0.8rem;
-  color: var(--txt2);
-  text-align: center;
-  font-style: italic;
-}
-
-.pin-forgot {
-  font-size: 0.78rem;
-  color: var(--txt2);
-  text-align: center;
-  margin-top: 4px;
-}
-.pin-forgot-msg {
-  background: #fffbeb;
-  border: 1.5px solid #fbbf24;
-  border-radius: 10px;
-  padding: 10px 14px;
-  font-size: 0.82rem;
-  color: #92400e;
-  text-align: center;
-  margin-top: 8px;
 }
 
 /* ===== Admin panel ===== */
@@ -2193,32 +2135,3 @@ html, body {
 .wo-new-badge-name { font-size: 0.82rem; font-weight: 900; color: var(--txt); }
 .wo-new-badge-desc { font-size: 0.72rem; color: var(--txt2); margin-top: 1px; }
 
-/* ===== Création de profil ===== */
-#createProfileScreen {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 100dvh;
-  padding: 32px 24px;
-  background: linear-gradient(160deg, #fff5f5, #ffffff);
-}
-
-.profile-btn-create {
-  border-style: dashed;
-  border-color: var(--ok);
-  color: var(--ok);
-  margin-top: 4px;
-}
-.profile-btn-create:hover { border-color: var(--ok); box-shadow: 0 4px 20px rgba(31,138,76,0.15); }
-
-.profile-avatar.create {
-  background: #f0fdf4;
-  color: var(--ok);
-  font-size: 2rem;
-}
-
-.profile-avatar.custom {
-  font-size: 2rem;
-  font-weight: 900;
-}
