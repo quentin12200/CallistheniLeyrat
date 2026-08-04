@@ -194,7 +194,7 @@ async function syncFromFirestore() {
 
 async function migrateFromTurso() {
   const email = fbAuth.currentUser?.email;
-  if (!email) return;
+  if (!email) return false;
   try {
     const res = await fetch('/api/migrate', {
       method: 'POST',
@@ -202,19 +202,54 @@ async function migrateFromTurso() {
       body: JSON.stringify({ email }),
     });
     const json = await res.json();
-    if (!json.ok || !json.data) return;
+    if (!json.ok || !json.data) return false;
 
-    // Écrire les données dans localStorage
-    Object.entries(json.data).forEach(([k, v]) => {
-      if (v !== null && v !== undefined) {
-        localStorage.setItem(currentUser + '_' + k, v);
-      }
-    });
-    console.log('Migration Turso → Firebase OK');
-    // Puis sauvegarder dans Firestore pour les prochaines fois
+    const keys = Object.keys(json.data).filter(k => json.data[k] !== null && json.data[k] !== undefined);
+    keys.forEach(k => localStorage.setItem(currentUser + '_' + k, json.data[k]));
+    console.log('Migration Turso → Firebase OK (' + keys.length + ' clés)');
     await syncToFirestore();
+    return keys.length;
   } catch (e) {
     console.log('Migration Turso non disponible:', e.message);
+    return false;
+  }
+}
+
+async function manualMigrate() {
+  const btn = document.getElementById('migratBtn');
+  const status = document.getElementById('migrateStatus');
+  if (!btn || !status) return;
+
+  if (!fbAuth.currentUser) {
+    status.style.display = 'block';
+    status.style.color = 'var(--red)';
+    status.textContent = '❌ Connecte-toi d\'abord avec ton compte Google.';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Récupération en cours…';
+  status.style.display = 'block';
+  status.style.color = 'var(--txt2)';
+  status.textContent = 'Connexion à la base de données…';
+
+  const count = await migrateFromTurso();
+  btn.disabled = false;
+  btn.textContent = '↩ Récupérer mes anciennes données';
+
+  if (count === false) {
+    status.style.color = 'var(--red)';
+    status.textContent = '❌ Erreur — compte non trouvé ou base indisponible.';
+  } else if (count === 0) {
+    status.style.color = 'var(--warn)';
+    status.textContent = '⚠️ Aucune donnée trouvée dans l\'ancienne base.';
+  } else {
+    status.style.color = 'var(--ok)';
+    status.textContent = `✅ ${count} données récupérées ! L'app va se rafraîchir…`;
+    setTimeout(() => {
+      if (typeof renderHome === 'function') renderHome();
+      if (typeof renderSettings === 'function') renderSettings();
+    }, 1500);
   }
 }
 
