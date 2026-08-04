@@ -99,8 +99,9 @@ async function fbRegister() {
   try {
     const cred = await fbAuth.createUserWithEmailAndPassword(email, password);
     await cred.user.updateProfile({ displayName: name });
-    // Forcer le rechargement pour avoir le displayName à jour
     await cred.user.reload();
+    // onAuthStateChanged s'est déclenché avant updateProfile — relancer manuellement
+    onFirebaseLogin(fbAuth.currentUser);
   } catch (err) {
     showAuthError(friendlyAuthError(err));
     setAuthLoading(false);

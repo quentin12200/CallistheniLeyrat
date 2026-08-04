@@ -2618,7 +2618,7 @@ async function renderAdmin() {
       </div>
 
       ${users.map(u => {
-        const stats = parseStats(u.data?.data);
+        const stats = parseStats(u.data);
         const name = u.profile?.displayName || u.uid.slice(0, 8);
         const email = u.profile?.email || '';
         return `
