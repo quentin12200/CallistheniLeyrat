@@ -1448,6 +1448,82 @@ html, body {
   font-style: italic;
 }
 
+.pin-forgot {
+  font-size: 0.78rem;
+  color: var(--txt2);
+  text-align: center;
+  margin-top: 4px;
+}
+.pin-forgot-msg {
+  background: #fffbeb;
+  border: 1.5px solid #fbbf24;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 0.82rem;
+  color: #92400e;
+  text-align: center;
+  margin-top: 8px;
+}
+
+/* ===== Admin panel ===== */
+.admin-summary { margin-bottom: 8px; }
+.admin-summary-title { font-weight: 900; font-size: 1rem; color: var(--txt); }
+
+.admin-user-card { margin-bottom: 12px; }
+
+.admin-user-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+.admin-user-avatar {
+  width: 46px; height: 46px;
+  border-radius: 50%;
+  background: var(--red);
+  color: white;
+  font-size: 1.4rem;
+  font-weight: 900;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.admin-user-name { font-weight: 900; font-size: 1.05rem; color: var(--txt); }
+.admin-user-meta { font-size: 0.78rem; color: var(--txt2); margin-top: 2px; }
+
+.admin-stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.admin-stat {
+  background: var(--bg2);
+  border-radius: 10px;
+  padding: 10px 6px;
+  text-align: center;
+}
+.admin-stat-val { font-size: 1.2rem; font-weight: 900; color: var(--txt); }
+.admin-stat-lbl { font-size: 0.62rem; color: var(--txt2); margin-top: 2px; font-weight: 700; }
+
+.admin-reset-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+}
+.admin-pin-input {
+  flex: 1;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 0.9rem;
+  background: var(--bg);
+  color: var(--txt);
+  font-family: inherit;
+}
+.admin-pin-input:focus { outline: none; border-color: var(--red); }
+
 /* ===== Sync indicator (topbar) ===== */
 .sync-indicator {
   font-size: 0.78rem;

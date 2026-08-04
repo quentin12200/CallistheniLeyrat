@@ -1324,14 +1324,18 @@ function checkAllSeriesDone() {
 function showPage(id) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('page-' + id).classList.add('active');
-  document.getElementById('nav-' + id).classList.add('active');
+  const page = document.getElementById('page-' + id);
+  const navBtn = document.getElementById('nav-' + id);
+  if (!page) return;
+  page.classList.add('active');
+  if (navBtn) navBtn.classList.add('active');
 
   if (id === 'home') renderHome();
   if (id === 'calendar') renderCalendar();
   if (id === 'dashboard') renderDashboard();
   if (id === 'library') renderLibrary();
   if (id === 'settings') renderSettings();
+  if (id === 'admin') renderAdmin();
 }
 
 // ─── Rendu — Page d'accueil ───────────────────────────────────
@@ -1953,6 +1957,13 @@ function selectProfile(user) {
       document.getElementById('comebackMsg').textContent = randomComeback();
       document.getElementById('comebackBanner').classList.remove('hidden');
     }, 500);
+  }
+
+  // Afficher l'onglet Admin uniquement pour Quentin
+  const adminBtn = document.getElementById('nav-admin');
+  if (adminBtn) {
+    if (user === 'quentin') adminBtn.classList.remove('hidden');
+    else adminBtn.classList.add('hidden');
   }
 
   showPage('home');
@@ -2998,6 +3009,108 @@ function woToggleInfo(idx) {
   const content = document.getElementById('wo-info-content-' + idx);
   if (!content) return;
   content.classList.toggle('hidden');
+}
+
+// ─── PIN oublié ───────────────────────────────────────────────
+function showPinForgotMsg() {
+  const el = document.getElementById('pinForgotMsg');
+  if (el) el.classList.toggle('hidden');
+}
+
+// ─── Admin (Quentin uniquement) ───────────────────────────────
+async function renderAdmin() {
+  const el = document.getElementById('adminContent');
+  if (!el) return;
+  if (currentUser !== 'quentin') {
+    el.innerHTML = '<div class="card" style="color:var(--txt2);text-align:center;">Accès réservé à l\'administrateur.</div>';
+    return;
+  }
+
+  el.innerHTML = '<div class="card" style="text-align:center;color:var(--txt2);">Chargement des données…</div>';
+
+  const pin = localStorage.getItem('quentin_pin');
+  if (!pin) { el.innerHTML = '<div class="card">PIN non trouvé — reconnecte-toi.</div>'; return; }
+
+  try {
+    const res = await fetch(`/api/admin?action=users&pin=${encodeURIComponent(pin)}`);
+    const json = await res.json();
+    if (!json.ok) { el.innerHTML = `<div class="card" style="color:red;">${json.error}</div>`; return; }
+
+    const users = json.users;
+
+    el.innerHTML = `
+      <div class="admin-summary card">
+        <div class="admin-summary-title">👥 ${users.length} utilisateur${users.length > 1 ? 's' : ''} enregistré${users.length > 1 ? 's' : ''}</div>
+      </div>
+
+      ${users.map(u => `
+        <div class="card admin-user-card">
+          <div class="admin-user-header">
+            <div class="admin-user-avatar">${u.user.charAt(0).toUpperCase()}</div>
+            <div class="admin-user-info">
+              <div class="admin-user-name">${u.user.charAt(0).toUpperCase() + u.user.slice(1)}</div>
+              <div class="admin-user-meta">${u.startDate ? `Depuis le ${u.startDate}` : 'Pas encore démarré'}</div>
+            </div>
+          </div>
+
+          <div class="admin-stats-row">
+            <div class="admin-stat">
+              <div class="admin-stat-val">${u.sessions}</div>
+              <div class="admin-stat-lbl">Séances</div>
+            </div>
+            <div class="admin-stat">
+              <div class="admin-stat-val">${u.streak}</div>
+              <div class="admin-stat-lbl">Série actuelle</div>
+            </div>
+            <div class="admin-stat">
+              <div class="admin-stat-val">${u.xp}</div>
+              <div class="admin-stat-lbl">XP total</div>
+            </div>
+            <div class="admin-stat">
+              <div class="admin-stat-val">${u.notifEnabled ? '🔔' : '🔕'}</div>
+              <div class="admin-stat-lbl">Notifs ${u.notifTime || ''}</div>
+            </div>
+          </div>
+
+          <div class="admin-reset-row">
+            <input type="password" inputmode="numeric" maxlength="6" placeholder="Nouveau PIN (4-6 chiffres)"
+              class="admin-pin-input" id="newpin-${u.user}" />
+            <button class="btn btn-secondary" style="font-size:.8rem;padding:8px 14px;"
+              onclick="adminResetPin('${u.user}')">🔑 Réinitialiser</button>
+          </div>
+        </div>
+      `).join('')}
+    `;
+  } catch (err) {
+    el.innerHTML = `<div class="card" style="color:red;">Erreur réseau — réessaie.</div>`;
+  }
+}
+
+async function adminResetPin(targetUser) {
+  const input = document.getElementById('newpin-' + targetUser);
+  if (!input) return;
+  const newPin = input.value.trim();
+  if (newPin.length < 4) { showToast('PIN trop court — 4 chiffres minimum.'); return; }
+
+  const pin = localStorage.getItem('quentin_pin');
+  if (!pin) { showToast('Reconnecte-toi d\'abord.'); return; }
+
+  try {
+    const res = await fetch('/api/admin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pin, action: 'reset-pin', targetUser, newPin }),
+    });
+    const json = await res.json();
+    if (json.ok) {
+      showToast(`✅ PIN de ${targetUser} réinitialisé à : ${newPin}`);
+      input.value = '';
+    } else {
+      showToast('❌ ' + json.error);
+    }
+  } catch (err) {
+    showToast('Erreur réseau.');
+  }
 }
 
 // ─── Init ─────────────────────────────────────────────────────
