@@ -16,7 +16,11 @@ const fbAuth = firebase.auth();
 const fbDb   = firebase.firestore();
 
 // Récupère le résultat après un signInWithRedirect (mobile)
-fbAuth.getRedirectResult().catch(() => {});
+fbAuth.getRedirectResult().catch(err => {
+  if (err.code && err.code !== 'auth/no-auth-event') {
+    showAuthError(friendlyAuthError(err));
+  }
+});
 
 const ADMIN_EMAIL = 'leyrat.quentin@gmail.com';
 
