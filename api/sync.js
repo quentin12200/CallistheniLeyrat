@@ -81,10 +81,10 @@ module.exports = async function handler(req, res) {
     if (!pin) return res.status(500).json({ ok: false, error: 'PIN non configuré' });
     try {
       const result = await getDb().execute({
-        sql: 'SELECT data FROM profiles WHERE user = ? AND pin = ?',
-        args: [username, pin],
+        sql: 'SELECT data FROM profiles WHERE user = ?',
+        args: [username],
       });
-      if (!result.rows.length) return res.status(404).json({ ok: false, error: 'Données introuvables' });
+      if (!result.rows.length) return res.status(404).json({ ok: false, error: 'Données introuvables dans Turso' });
       const raw = result.rows[0].data;
       const data = typeof raw === 'string' ? JSON.parse(raw) : (raw || {});
       return res.status(200).json({ ok: true, data });
