@@ -236,6 +236,10 @@ function workout(day, diffOffset = 0) {
     if (d === 5) list = [`Montées de genoux — 3 x 30s`, `Squats — 3 x 30s`, `Gainage côté — 2 x 25s par côté`, `Superman — 3 x 25s`];
     if (d === 6) list = [`Montées de genoux — 3 x 30s`, `Squats — 3 x 30s`, `Pont fessier — 3 x 30s`, `Fentes — 2 x 30s par jambe`];
     if (d === 7) list = [`Footing sur place — 3 x 45s`, `Pompes mur — 3 x 25s`, `Gainage face — 3 x 25s`, `Dips chaise — 3 x 25s`];
+    if (d !== 4) {
+      const adapted14 = adaptWorkoutToPrefs(list, 3);
+      list = adapted14.list;
+    }
     return { title, list, note: "Récupération : 1 min entre exercices, 30s entre séries.", isRest: d === 4 };
   }
 
@@ -262,6 +266,10 @@ function workout(day, diffOffset = 0) {
     return `${x} — ${dur}s`;
   });
 
+  const adapted = adaptWorkoutToPrefs(list, rounds);
+  list = adapted.list;
+  rounds = adapted.rounds;
+
   return {
     title: `${title} — circuit ${rounds} tour${rounds > 1 ? 's' : ''}`,
     list,
@@ -270,6 +278,83 @@ function workout(day, diffOffset = 0) {
   };
 }
 
+function adaptWorkoutToPrefs(list, rounds) {
+  const duration = load('sessionDuration', '');
+  const equipment = load('equipment', 'sol');
+
+  // Equipment substitutions
+  if (equipment === 'minimal') {
+    list = list.map(e => e
+      .replace('Dips chaise', 'Pompes mur')
+      .replace('Pompes sol', 'Pompes mur')
+      .replace('Pompes genoux', 'Pompes mur')
+    );
+  } else if (equipment === 'chaise') {
+    list = list.map(e => e.replace('Pompes sol', 'Pompes genoux'));
+  }
+
+  // Duration adaptation
+  if (duration === '15') {
+    list = list.slice(0, 3);
+    rounds = Math.min(rounds, 2);
+  } else if (duration === '45') {
+    rounds = Math.min(rounds + 1, 6);
+  }
+
+  return { list, rounds };
+}
+
+
+// ─── Onboarding ───────────────────────────────────────────────
+const _obData = {};
+
+function showOnboarding() {
+  if (load('onboardingDone')) return;
+  document.getElementById('onboardingOverlay')?.classList.remove('hidden');
+}
+
+function skipOnboarding() {
+  store('onboardingDone', '1');
+  document.getElementById('onboardingOverlay')?.classList.add('hidden');
+}
+
+function obSelect(btn) {
+  const key = btn.dataset.key;
+  const val = btn.dataset.val;
+  // Deselect siblings
+  btn.closest('.ob-options').querySelectorAll('.ob-option').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  _obData[key] = val;
+}
+
+function obToggleDay(btn) {
+  btn.classList.toggle('selected');
+}
+
+function obNext(step) {
+  // Hide all steps, show target
+  document.querySelectorAll('.onboarding-step').forEach(s => s.classList.remove('active'));
+  document.getElementById('ob-step-' + step)?.classList.add('active');
+  // Update dots
+  document.querySelectorAll('.ob-dot').forEach((d, i) => {
+    d.classList.toggle('active', i < step);
+  });
+}
+
+function finishOnboarding() {
+  // Save all collected data
+  Object.entries(_obData).forEach(([k, v]) => store(k, v));
+  // Save training days
+  const days = [...document.querySelectorAll('#obDaysRow .ob-day.selected')].map(b => parseInt(b.dataset.day));
+  if (days.length > 0) store('trainingDays', days);
+  store('onboardingDone', '1');
+  document.getElementById('onboardingOverlay')?.classList.add('hidden');
+  renderHome();
+}
+
+function toggleSettingDay(btn) {
+  btn.classList.toggle('selected');
+}
 
 function setSyncIndicator(state) {
   // state: '' | 'syncing' | 'synced' | 'sync-error'
@@ -961,6 +1046,8 @@ function showPage(id) {
 
 // ─── Rendu — Page d'accueil ───────────────────────────────────
 function renderHome() {
+  // Onboarding au premier lancement
+  if (!load('onboardingDone')) showOnboarding();
   // Nettoyer les timers inline actifs de la session précédente
   Object.values(inlineTimers).forEach(t => clearInterval(t?.interval));
   for (const k in inlineTimers) delete inlineTimers[k];
@@ -1385,6 +1472,17 @@ function renderSettings() {
     }
   }
 
+  // Préférences avancées
+  const dur = document.getElementById('settingDuration');
+  if (dur) dur.value = load('sessionDuration', '');
+  const eq = document.getElementById('settingEquipment');
+  if (eq) eq.value = load('equipment', 'sol');
+  // Training days
+  const savedDays = load('trainingDays', []);
+  document.querySelectorAll('#settingDaysRow .ob-day').forEach(btn => {
+    btn.classList.toggle('selected', savedDays.includes(parseInt(btn.dataset.day)));
+  });
+
   // Ajouter mesure rapide dans les réglages
   const today = new Date().toISOString().slice(0, 10);
   const qm = document.getElementById('quickMeasureDate');
@@ -1417,6 +1515,14 @@ function saveSettings() {
   const bodyHeight = document.getElementById('settingBodyHeight')?.value;
   if (initWeight) store('initWeight', parseFloat(initWeight));
   if (bodyHeight) store('bodyHeight', parseFloat(bodyHeight));
+
+  // Préférences avancées
+  const durVal = document.getElementById('settingDuration')?.value;
+  if (durVal !== undefined) store('sessionDuration', durVal);
+  const eqVal = document.getElementById('settingEquipment')?.value;
+  if (eqVal) store('equipment', eqVal);
+  const trainingDays = [...document.querySelectorAll('#settingDaysRow .ob-day.selected')].map(b => parseInt(b.dataset.day));
+  store('trainingDays', trainingDays);
 
   // Demander permission et activer les notifications
   if (document.getElementById('settingNotifEnabled').checked) {

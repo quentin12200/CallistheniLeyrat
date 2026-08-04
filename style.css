@@ -2171,3 +2171,111 @@ html, body {
 .wo-new-badge-name { font-size: 0.82rem; font-weight: 900; color: var(--txt); }
 .wo-new-badge-desc { font-size: 0.72rem; color: var(--txt2); margin-top: 1px; }
 
+/* ===== Onboarding ===== */
+#onboardingOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+#onboardingOverlay.hidden { display: none; }
+
+.onboarding-card {
+  background: var(--card);
+  border-radius: 24px;
+  padding: 32px 24px 24px;
+  width: 100%;
+  max-width: 400px;
+  position: relative;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+
+.onboarding-skip {
+  position: absolute;
+  top: 16px;
+  right: 20px;
+  font-size: 0.85rem;
+  color: var(--txt2);
+  cursor: pointer;
+}
+.onboarding-skip:hover { color: var(--txt); }
+
+.onboarding-step { display: none; }
+.onboarding-step.active { display: flex; flex-direction: column; gap: 16px; }
+
+.ob-emoji { font-size: 2.5rem; text-align: center; }
+.ob-title { font-size: 1.2rem; font-weight: 800; color: var(--txt); text-align: center; }
+.ob-subtitle { font-size: 0.85rem; color: var(--txt2); text-align: center; }
+
+.ob-options { display: flex; flex-direction: column; gap: 10px; }
+
+.ob-option {
+  background: var(--bg);
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  text-align: left;
+  font-size: 0.95rem;
+  color: var(--txt);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  font-weight: 500;
+}
+.ob-option:hover { border-color: var(--red); }
+.ob-option.selected { border-color: var(--red); background: #fff5f5; color: var(--red); font-weight: 700; }
+
+.ob-next {
+  background: var(--red);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 14px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  width: 100%;
+  margin-top: 4px;
+}
+.ob-next:hover { opacity: 0.9; }
+.ob-finish { background: #16a34a; }
+
+.ob-days-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.ob-day {
+  flex: 1;
+  min-width: 38px;
+  padding: 10px 4px;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--txt2);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+.ob-day.selected { border-color: var(--red); background: #fff5f5; color: var(--red); }
+
+.ob-dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 20px;
+}
+.ob-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--border);
+  transition: background 0.2s;
+}
+.ob-dot.active { background: var(--red); }
+
