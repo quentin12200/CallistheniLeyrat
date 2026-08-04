@@ -1642,86 +1642,108 @@ function saveWeight(date, poids, taille, note) {
 function drawWeightChart(canvasId, data, label, color) {
   const canvas = document.getElementById(canvasId);
   if (!canvas) return;
+
+  // Adapter la résolution au display
+  const dpr = window.devicePixelRatio || 1;
+  const displayW = canvas.parentElement?.clientWidth || 320;
+  const displayH = 160;
+  canvas.style.width = '100%';
+  canvas.style.height = displayH + 'px';
+  canvas.width = displayW * dpr;
+  canvas.height = displayH * dpr;
+
   const ctx = canvas.getContext('2d');
-  const W = canvas.width;
-  const H = canvas.height;
-  const pad = { top: 20, right: 16, bottom: 28, left: 40 };
+  ctx.scale(dpr, dpr);
+  const W = displayW;
+  const H = displayH;
+  const pad = { top: 24, right: 16, bottom: 36, left: 46 };
 
   ctx.clearRect(0, 0, W, H);
-  ctx.fillStyle = '#ffffff';
+  ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--card').trim() || '#fff';
   ctx.fillRect(0, 0, W, H);
-
-  if (!data || data.length === 0) {
-    ctx.fillStyle = '#aaa';
-    ctx.font = '13px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('Aucune donnée', W / 2, H / 2);
-    return;
-  }
 
   const values = data.map(d => d.val).filter(v => v != null && !isNaN(v));
   if (values.length === 0) return;
 
   const minVal = Math.min(...values);
   const maxVal = Math.max(...values);
-  const range = maxVal - minVal || 1;
+  const padding = (maxVal - minVal) * 0.15 || 0.5;
+  const yMin = minVal - padding;
+  const yMax = maxVal + padding;
+  const range = yMax - yMin;
 
   const toX = (i) => pad.left + (i / (data.length - 1 || 1)) * (W - pad.left - pad.right);
-  const toY = (v) => pad.top + (1 - (v - minVal) / range) * (H - pad.top - pad.bottom);
+  const toY = (v) => pad.top + (1 - (v - yMin) / range) * (H - pad.top - pad.bottom);
 
-  // Axes
-  ctx.strokeStyle = '#ddd';
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(pad.left, pad.top);
-  ctx.lineTo(pad.left, H - pad.bottom);
-  ctx.lineTo(W - pad.right, H - pad.bottom);
-  ctx.stroke();
-
-  // Y labels
-  ctx.fillStyle = '#888';
-  ctx.font = '10px sans-serif';
-  ctx.textAlign = 'right';
-  [0, 0.5, 1].forEach(t => {
-    const v = minVal + t * range;
+  // Grille horizontale
+  const gridLines = 4;
+  for (let g = 0; g <= gridLines; g++) {
+    const v = yMin + (g / gridLines) * range;
     const y = toY(v);
-    ctx.fillText(v.toFixed(1), pad.left - 4, y + 4);
-    ctx.strokeStyle = '#f0f0f0';
+    ctx.strokeStyle = g === 0 ? '#ddd' : '#f0f0f0';
+    ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(pad.left, y);
     ctx.lineTo(W - pad.right, y);
     ctx.stroke();
+    ctx.fillStyle = '#999';
+    ctx.font = `${11 * (dpr > 1 ? 1 : 1)}px -apple-system,sans-serif`;
+    ctx.textAlign = 'right';
+    ctx.fillText(v.toFixed(1), pad.left - 6, y + 4);
+  }
+
+  // Zone sous la courbe (dégradé)
+  const grad = ctx.createLinearGradient(0, pad.top, 0, H - pad.bottom);
+  grad.addColorStop(0, color + '33');
+  grad.addColorStop(1, color + '00');
+  ctx.beginPath();
+  data.forEach((d, i) => {
+    if (d.val == null) return;
+    i === 0 ? ctx.moveTo(toX(i), toY(d.val)) : ctx.lineTo(toX(i), toY(d.val));
   });
+  ctx.lineTo(toX(data.length - 1), H - pad.bottom);
+  ctx.lineTo(toX(0), H - pad.bottom);
+  ctx.closePath();
+  ctx.fillStyle = grad;
+  ctx.fill();
 
   // Ligne
   ctx.strokeStyle = color;
   ctx.lineWidth = 2.5;
   ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
   ctx.beginPath();
   data.forEach((d, i) => {
     if (d.val == null) return;
-    const x = toX(i); const y = toY(d.val);
-    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    i === 0 ? ctx.moveTo(toX(i), toY(d.val)) : ctx.lineTo(toX(i), toY(d.val));
   });
   ctx.stroke();
 
   // Points
-  ctx.fillStyle = color;
   data.forEach((d, i) => {
     if (d.val == null) return;
     ctx.beginPath();
     ctx.arc(toX(i), toY(d.val), 4, 0, Math.PI * 2);
+    ctx.fillStyle = '#fff';
     ctx.fill();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.stroke();
   });
 
-  // X labels (dates)
-  ctx.fillStyle = '#aaa';
-  ctx.font = '9px sans-serif';
+  // X labels — afficher max 6 dates lisibles
+  const maxLabels = Math.min(6, data.length);
+  const step = Math.max(1, Math.floor((data.length - 1) / (maxLabels - 1)));
+  ctx.fillStyle = '#999';
+  ctx.font = '11px -apple-system,sans-serif';
   ctx.textAlign = 'center';
-  const step = Math.max(1, Math.ceil(data.length / 5));
   data.forEach((d, i) => {
     if (i % step === 0 || i === data.length - 1) {
-      ctx.fillText(d.label, toX(i), H - pad.bottom + 14);
+      // Afficher jour/mois lisiblement
+      const lbl = d.label || '';
+      const parts = lbl.split('-');
+      const display = parts.length >= 3 ? `${parts[2]}/${parts[1]}` : lbl;
+      ctx.fillText(display, toX(i), H - pad.bottom + 18);
     }
   });
 }
@@ -1921,7 +1943,7 @@ function renderDashboard() {
         <div class="dash-weight-val">${latestWeight} kg</div>
         ${weightDelta !== null ? `<div class="dash-weight-delta ${parseFloat(weightDelta) <= 0 ? 'neg' : 'pos'}">${parseFloat(weightDelta) > 0 ? '+' : ''}${weightDelta} kg</div>` : ''}
       </div>
-      ${weightData.length > 1 ? `<canvas id="weightChart" width="320" height="140" style="width:100%;height:140px;border-radius:8px;margin-top:12px;"></canvas>` : ''}
+      ${weightData.length > 1 ? `<canvas id="weightChart" style="display:block;width:100%;border-radius:8px;margin-top:12px;"></canvas>` : ''}
     </div>` : ''}
 
     <!-- Historique séances -->
