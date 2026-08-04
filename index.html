@@ -87,6 +87,12 @@
       <button class="btn btn-secondary" onclick="cancelPin()">Annuler</button>
       <button class="btn btn-primary" id="pinSubmitBtn" onclick="submitPin()" disabled>Valider</button>
     </div>
+    <div class="pin-forgot" id="pinForgot">
+      🔑 PIN oublié ? <span onclick="showPinForgotMsg()" style="text-decoration:underline;cursor:pointer;">Aide</span>
+    </div>
+    <div id="pinForgotMsg" class="pin-forgot-msg hidden">
+      Contacte <strong>Quentin</strong> — il peut réinitialiser ton accès depuis son panneau d'administration.
+    </div>
     <div class="pin-offline-note" id="pinOfflineNote" style="display:none;">
       Mode hors-ligne — vos données locales seront utilisées.
     </div>
@@ -461,8 +467,16 @@
     <div style="height:24px;"></div>
   </div><!-- /page-settings -->
 
+  <!-- ── Page Admin (Quentin uniquement) ── -->
+  <div id="page-admin" class="page">
+    <div class="section-title">🛡️ Administration</div>
+    <div id="adminContent">
+      <div class="card" style="text-align:center;color:var(--txt2);">Chargement…</div>
+    </div>
+  </div><!-- /page-admin -->
+
   <!-- ── Navigation bas ── -->
-  <nav class="bottom-nav">
+  <nav class="bottom-nav" id="bottomNav">
     <button class="nav-btn active" id="nav-home" onclick="showPage('home')">
       <span class="nav-icon-wrap"><span class="nav-icon">🏠</span></span>
       <span>Accueil</span>
@@ -482,6 +496,11 @@
     <button class="nav-btn" id="nav-settings" onclick="showPage('settings')">
       <span class="nav-icon-wrap"><span class="nav-icon">⚙️</span></span>
       <span>Réglages</span>
+    </button>
+    <!-- Onglet admin — injecté par JS si profil Quentin -->
+    <button class="nav-btn hidden" id="nav-admin" onclick="showPage('admin')">
+      <span class="nav-icon-wrap"><span class="nav-icon">🛡️</span></span>
+      <span>Admin</span>
     </button>
   </nav>
 
