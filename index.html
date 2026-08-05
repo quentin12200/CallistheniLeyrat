@@ -30,12 +30,7 @@
       Continuer avec Google
     </button>
 
-    <button class="login-microsoft-btn" onclick="fbLoginMicrosoft()">
-      <svg width="20" height="20" viewBox="0 0 21 21" style="margin-right:10px;"><rect x="1" y="1" width="9" height="9" fill="#f25022"/><rect x="11" y="1" width="9" height="9" fill="#7fba00"/><rect x="1" y="11" width="9" height="9" fill="#00a4ef"/><rect x="11" y="11" width="9" height="9" fill="#ffb900"/></svg>
-      Continuer avec Microsoft
-    </button>
-
-    <button class="login-phone-btn" onclick="showPhoneForm()">
+<button class="login-phone-btn" onclick="showPhoneForm()">
       📱 Continuer par SMS
     </button>
 
@@ -100,6 +95,75 @@
 
     <div class="login-links">
       <span class="login-link" onclick="showLoginForm()">← Retour à la connexion</span>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Onboarding (premier lancement) ===== -->
+<div id="onboardingOverlay" class="hidden">
+  <div class="onboarding-card">
+    <div class="onboarding-skip" onclick="skipOnboarding()">Passer →</div>
+    <div class="onboarding-steps" id="onboardingSteps">
+      <!-- step 1: objectif -->
+      <div class="onboarding-step active" id="ob-step-1">
+        <div class="ob-emoji">🎯</div>
+        <div class="ob-title">Quel est ton objectif ?</div>
+        <div class="ob-subtitle">Optionnel — tu pourras changer ça plus tard</div>
+        <div class="ob-options">
+          <button class="ob-option" data-key="objective" data-val="poids" onclick="obSelect(this)">⚖️ Perdre du poids</button>
+          <button class="ob-option" data-key="objective" data-val="remise" onclick="obSelect(this)">💪 Me remettre en forme</button>
+          <button class="ob-option" data-key="objective" data-val="muscu" onclick="obSelect(this)">🦾 Prendre du muscle</button>
+          <button class="ob-option" data-key="objective" data-val="abdos" onclick="obSelect(this)">🔥 Abdos / galbe</button>
+        </div>
+        <button class="ob-next" onclick="obNext(2)">Suivant →</button>
+      </div>
+      <!-- step 2: équipement -->
+      <div class="onboarding-step" id="ob-step-2">
+        <div class="ob-emoji">🏠</div>
+        <div class="ob-title">Ton équipement à la maison ?</div>
+        <div class="ob-subtitle">Pour adapter les exercices</div>
+        <div class="ob-options">
+          <button class="ob-option" data-key="equipment" data-val="minimal" onclick="obSelect(this)">🧘 Rien — juste le sol et les murs</button>
+          <button class="ob-option" data-key="equipment" data-val="chaise" onclick="obSelect(this)">🪑 Une chaise ou un banc</button>
+          <button class="ob-option" data-key="equipment" data-val="sol" onclick="obSelect(this)">🏋️ Je peux faire des pompes au sol</button>
+        </div>
+        <button class="ob-next" onclick="obNext(3)">Suivant →</button>
+      </div>
+      <!-- step 3: durée -->
+      <div class="onboarding-step" id="ob-step-3">
+        <div class="ob-emoji">⏱</div>
+        <div class="ob-title">Combien de temps par séance ?</div>
+        <div class="ob-subtitle">Le nombre d'exercices s'adapte automatiquement</div>
+        <div class="ob-options">
+          <button class="ob-option" data-key="sessionDuration" data-val="15" onclick="obSelect(this)">⚡ 15 min — séance express</button>
+          <button class="ob-option" data-key="sessionDuration" data-val="30" onclick="obSelect(this)">✅ 30 min — programme complet</button>
+          <button class="ob-option" data-key="sessionDuration" data-val="45" onclick="obSelect(this)">🔥 45 min — je pousse à fond</button>
+        </div>
+        <button class="ob-next" onclick="obNext(4)">Suivant →</button>
+      </div>
+      <!-- step 4: jours -->
+      <div class="onboarding-step" id="ob-step-4">
+        <div class="ob-emoji">📅</div>
+        <div class="ob-title">Tes jours préférés ?</div>
+        <div class="ob-subtitle">Pour les rappels — tu peux en choisir plusieurs</div>
+        <div class="ob-days-row" id="obDaysRow">
+          <button class="ob-day" data-day="1" onclick="obToggleDay(this)">Lun</button>
+          <button class="ob-day" data-day="2" onclick="obToggleDay(this)">Mar</button>
+          <button class="ob-day" data-day="3" onclick="obToggleDay(this)">Mer</button>
+          <button class="ob-day" data-day="4" onclick="obToggleDay(this)">Jeu</button>
+          <button class="ob-day" data-day="5" onclick="obToggleDay(this)">Ven</button>
+          <button class="ob-day" data-day="6" onclick="obToggleDay(this)">Sam</button>
+          <button class="ob-day" data-day="0" onclick="obToggleDay(this)">Dim</button>
+        </div>
+        <button class="ob-next ob-finish" onclick="finishOnboarding()">C'est parti ! 🚀</button>
+      </div>
+    </div>
+    <!-- Progress dots -->
+    <div class="ob-dots">
+      <div class="ob-dot active" id="ob-dot-1"></div>
+      <div class="ob-dot" id="ob-dot-2"></div>
+      <div class="ob-dot" id="ob-dot-3"></div>
+      <div class="ob-dot" id="ob-dot-4"></div>
     </div>
   </div>
 </div>
@@ -366,6 +430,51 @@
           <span class="settings-row-hint">Point de départ pour suivre ta progression</span>
         </div>
         <input type="number" id="settingInitWeight" class="settings-field-inline" min="30" max="300" step="0.1" placeholder="ex: 75.0" style="width:90px;" />
+      </div>
+    </div>
+
+    <!-- Préférences avancées -->
+    <div class="settings-section-header">🎛️ Programme & préférences</div>
+    <div class="card">
+      <div class="settings-row">
+        <div class="settings-row-label">
+          <span class="settings-row-title">Durée de séance</span>
+          <span class="settings-row-hint">Adapte le nombre d'exercices</span>
+        </div>
+        <select id="settingDuration" class="settings-field-inline">
+          <option value="">Auto</option>
+          <option value="15">15 min</option>
+          <option value="30">30 min</option>
+          <option value="45">45 min</option>
+        </select>
+      </div>
+      <div class="settings-divider"></div>
+      <div class="settings-row">
+        <div class="settings-row-label">
+          <span class="settings-row-title">Équipement</span>
+          <span class="settings-row-hint">Adapte les exercices proposés</span>
+        </div>
+        <select id="settingEquipment" class="settings-field-inline">
+          <option value="sol">Tout (sol + chaise)</option>
+          <option value="chaise">Chaise / banc</option>
+          <option value="minimal">Sans équipement</option>
+        </select>
+      </div>
+      <div class="settings-divider"></div>
+      <div class="settings-row" style="flex-direction:column;align-items:flex-start;gap:10px;">
+        <div class="settings-row-label">
+          <span class="settings-row-title">Jours d'entraînement préférés</span>
+          <span class="settings-row-hint">Pour les rappels et notifications</span>
+        </div>
+        <div class="ob-days-row" id="settingDaysRow">
+          <button class="ob-day" data-day="1" onclick="toggleSettingDay(this)">Lun</button>
+          <button class="ob-day" data-day="2" onclick="toggleSettingDay(this)">Mar</button>
+          <button class="ob-day" data-day="3" onclick="toggleSettingDay(this)">Mer</button>
+          <button class="ob-day" data-day="4" onclick="toggleSettingDay(this)">Jeu</button>
+          <button class="ob-day" data-day="5" onclick="toggleSettingDay(this)">Ven</button>
+          <button class="ob-day" data-day="6" onclick="toggleSettingDay(this)">Sam</button>
+          <button class="ob-day" data-day="0" onclick="toggleSettingDay(this)">Dim</button>
+        </div>
       </div>
     </div>
 

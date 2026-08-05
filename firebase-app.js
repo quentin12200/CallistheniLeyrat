@@ -70,20 +70,6 @@ async function fbLoginGoogle() {
   }
 }
 
-async function fbLoginMicrosoft() {
-  clearAuthError();
-  const provider = new firebase.auth.OAuthProvider('microsoft.com');
-  try {
-    await fbAuth.signInWithPopup(provider);
-  } catch (err) {
-    if (err.code === 'auth/popup-blocked' || err.code === 'auth/popup-closed-by-user') {
-      try { await fbAuth.signInWithRedirect(provider); } catch (e2) { showAuthError(friendlyAuthError(e2)); }
-    } else {
-      showAuthError(friendlyAuthError(err));
-    }
-  }
-}
-
 // ─── Connexion par SMS ────────────────────────────────────────
 let _phoneConfirmation = null;
 
