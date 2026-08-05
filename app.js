@@ -321,10 +321,16 @@ function skipOnboarding() {
 function obSelect(btn) {
   const key = btn.dataset.key;
   const val = btn.dataset.val;
-  // Deselect siblings
-  btn.closest('.ob-options').querySelectorAll('.ob-option').forEach(b => b.classList.remove('selected'));
-  btn.classList.add('selected');
-  _obData[key] = val;
+  const multiKeys = ['objective', 'equipment'];
+  if (multiKeys.includes(key)) {
+    btn.classList.toggle('selected');
+    const selected = [...btn.closest('.ob-options').querySelectorAll('.ob-option.selected')].map(b => b.dataset.val);
+    _obData[key] = selected;
+  } else {
+    btn.closest('.ob-options').querySelectorAll('.ob-option').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    _obData[key] = val;
+  }
 }
 
 function obToggleDay(btn) {
@@ -342,7 +348,7 @@ function obNext(step) {
 }
 
 function finishOnboarding() {
-  // Save all collected data
+  // Save all collected data (arrays stored as JSON)
   Object.entries(_obData).forEach(([k, v]) => store(k, v));
   // Save training days
   const days = [...document.querySelectorAll('#obDaysRow .ob-day.selected')].map(b => parseInt(b.dataset.day));
